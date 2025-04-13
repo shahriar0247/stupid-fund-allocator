@@ -1,0 +1,62 @@
+name: "Build and Push Docker Image"
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  docker:
+    name: "Docker Build and Push"
+    runs-on: self-hosted
+    environment: "Docker"
+    env:
+      DOCKER_TLS_VERIFY: ""
+      DOCKER_BUILDKIT: 1
+      DOCKER_CLI_EXPERIMENTAL: enabled
+      KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v4
+
+      - name: "Extract repository name"
+        id: extract_repo
+        run: |
+          echo "REPO_NAME=$(echo ${{ github.repository }} | cut -d'/' -f2)" >> $GITHUB_ENV
+
+      - name: "Set up Docker Buildx"
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: |
+            network=host
+          buildkitd-config-inline: |
+            insecure-registries = ["${{ vars.REGISTRY_HOST }}"]
+            [registry."${{ vars.REGISTRY_HOST }}"]
+              http = false
+              insecure = true
+
+      - name: "Build and Push Docker Image"
+        uses: docker/build-push-action@v5
+        with:
+          context: ./src
+          file: ./src/Dockerfile
+          push: ${{ github.event_name == 'push' }}
+          tags: |
+            ${{ vars.REGISTRY_HOST }}/${{ env.REPO_NAME }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+
+      - name: Dry Run Deploy to K8s
+        uses: actions-hub/kubectl@master
+        if: github.event_name == 'pull_request'
+        with:
+          args: apply -f deployment/ --dry-run=client
+
+      - name: Deploy to K8s
+        uses: actions-hub/kubectl@master
+        if: github.event_name == 'push'
+        with:
+          args: apply -f deployment/

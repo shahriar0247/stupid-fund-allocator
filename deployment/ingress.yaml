@@ -1,0 +1,18 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: fund-allocator-ingress
+  namespace: default
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: fund-allocator.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: fund-allocator
+                port:
+                  number: 80
