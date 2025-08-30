@@ -1,210 +1,565 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Fund Allocation</title>
-  <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css')}}">
-  <script src="{{ url_for('static', filename='js/jquery.js')}}"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/preline@2.7.0/dist/preline.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jquery-sortablejs@latest/jquery-sortable.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Debt Payoff Optimizer</title>
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css')}}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/preline@2.7.0/dist/preline.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 </head>
 
-<body class="bg-gray-100">
-  <div id="root" class="container mx-auto p-4"></div>
-  <script src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <div id="root"></div>
 
-  <script type="text/babel" src="{{ url_for('static', filename='js/checkingInput.js')}}"></script>
-  <script type="text/babel" src="{{ url_for('static', filename='js/checkingKeepInput.js')}}"></script>
-  <script type="text/babel" src="{{ url_for('static', filename='js/accountInput.js')}}"></script>
+    <script type="text/babel">
+        const { useState, useEffect } = React;
 
-  <script type="text/babel">
-    const { useState, useEffect } = React;
-
-    function App() {
-      const [keepAmount, setKeepAmount] = useState("");
-      const [receivedAmount, setReceivedAmount] = useState("");
-      const [accounts, setAccounts] = useState([]);
-      const [allocationTable, setAllocationTable] = useState([]);
-
-      useEffect(() => {
-        const storedAccounts =
-          JSON.parse(localStorage.getItem("accounts")) || [];
-        setAccounts(storedAccounts);
-      }, []);
-
-      const handleAddAccount = () => {
-        const newAccounts = [
-          ...accounts,
-          { name: "", min_send: 0, enabled: true },
-        ];
-        setAccounts(newAccounts);
-        localStorage.setItem("accounts", JSON.stringify(newAccounts));
-      };
-
-      const handleAccountChange = (index, field, value) => {
-        const newAccounts = [...accounts];
-        newAccounts[index][field] = value;
-        setAccounts(newAccounts);
-        localStorage.setItem("accounts", JSON.stringify(newAccounts));
-      };
-
-      const handleDelete = (index) => {
-        const newAccounts = accounts.filter((_, i) => i !== index);
-        setAccounts(newAccounts);
-        localStorage.setItem("accounts", JSON.stringify(newAccounts));
-      };
-
-      const handleEnable = (index) => {
-        const newAccounts = [...accounts];
-        newAccounts[index].enabled = !newAccounts[index].enabled;
-        setAccounts(newAccounts);
-        localStorage.setItem("accounts", JSON.stringify(newAccounts));
-      };
-
-      const handleSubmit = async (e) => {
-        e.preventDefault();
-        const activeAccounts = accounts.filter((account) => account.enabled);
-        const response = await fetch("http://127.0.0.1:5000/allocate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            received_amount: receivedAmount,
-            keep_amount: keepAmount,
-            accounts: activeAccounts,
-          }),
-        });
-        const data = await response.json();
-        setAllocationTable(data.allocation_table);
-      };
-
-      return (
-        <div className="bg-white p-6 rounded-lg shadow-lg">
-          <div class="max-w-2xl text-center mx-auto">
-            <h1 class="block text-3xl font-bold text-gray-800 sm:text-4xl md:text-5xl dark:text-white">
-              Fund Allocation
-            </h1>
-
-            <p class="mt-3 text-lg text-gray-800 dark:text-neutral-400">
-              Ensure fair distribution and proper management of your finances.
-            </p>
-          </div>
-          <form onSubmit={handleSubmit}>
-            <CheckingInput
-              step={0.01}
-              value={receivedAmount}
-              onChange={(e) => setReceivedAmount(e.target.value)}
-              className="mb-4 p-2 border rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <br />
-            <CheckingKeepInput
-              step={0.01}
-              value={keepAmount}
-              onChange={(e) => setKeepAmount(e.target.value)}
-              className="mb-4 p-2 border rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <br />
-            <h2 className="text-xl font-semibold mb-2">Accounts</h2>
-            {accounts.map((account, index) => (
-              <AccountInput
-                index={index}
-                step={0.01}
-                accountName={account.name}
-                accountMinSend={account.min_send}
-                enabled={account.enabled}
-                accountNameChange={(e) =>
-                  handleAccountChange(index, "name", e.target.value)
-                }
-                minSendChange={(e) =>
-                  handleAccountChange(index, "min_send", e.target.value)
-                }
-                handleEnable={() => handleEnable(index)}
-                handleDelete={() => handleDelete(index)}
-              />
-            ))}
-            <button
-              type="button"
-              onClick={handleAddAccount}
-              class="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none"
-            >
-              Add Account
-            </button>
-            <br />
-            <br />
-            <input
-              type="submit"
-              value="Allocate Funds"
-              className="w-full py-3 px-4 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-green-600 text-white hover:bg-green-700 focus:outline-none focus:bg-green-700 disabled:opacity-50 disabled:pointer-events-none"
-            />
-          </form>
-          {allocationTable.length > 0 && (
-            <div className="mt-6">
-              <h2 className="text-xl font-semibold mb-2">
-                Final Allocation:
-              </h2>
-              <div className="flex flex-col">
-                <div className="-m-1.5 overflow-x-auto">
-                  <div className="p-1.5 min-w-full inline-block align-middle">
-                    <div className="border rounded-lg overflow-hidden dark:border-neutral-700">
-                      <table className="min-w-full divide-y divide-gray-200 dark:divide-neutral-700">
-                        <thead className="bg-gray-50 dark:bg-neutral-700">
-                          <tr>
-                            <th
-                              scope="col"
-                              className="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase dark:text-neutral-400"
-                            >
-                              Account Number
-                            </th>
-                            <th
-                              scope="col"
-                              className="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase dark:text-neutral-400"
-                            >
-                              Name
-                            </th>
-                            <thz
-                              scope="col"
-                              className="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase dark:text-neutral-400"
-                            >
-                              Allocated
-                            </thz>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200 dark:divide-neutral-700">
-                          {allocationTable.map((row, index) => (
-                            <tr
-                              className="hover:bg-gray-100 dark:hover:bg-neutral-70"
-                              key={index}
-                            >
-                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800 dark:text-neutral-200">
-                                {row.account_number}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-neutral-200">
-                                {row.name}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-neutral-200">
-                                ${row.allocated}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-              </div>
+        // Utility Components
+        const Card = ({ children, className = "", ...props }) => (
+            <div className={`bg-white rounded-xl shadow-lg border border-gray-200 p-6 ${className}`} {...props}>
+                {children}
             </div>
-          )}
-        </div>
-      );
-    }
+        );
 
-    ReactDOM.render(<App />, document.getElementById("root"));
-  </script>
+        const Button = ({ children, variant = "primary", className = "", ...props }) => {
+            const baseClasses = "px-4 py-2 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2";
+            const variants = {
+                primary: "bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500",
+                secondary: "bg-gray-200 text-gray-800 hover:bg-gray-300 focus:ring-gray-500",
+                success: "bg-green-600 text-white hover:bg-green-700 focus:ring-green-500",
+                danger: "bg-red-600 text-white hover:bg-red-700 focus:ring-red-500",
+                outline: "border border-blue-600 text-blue-600 hover:bg-blue-50 focus:ring-blue-500"
+            };
+            return (
+                <button className={`${baseClasses} ${variants[variant]} ${className}`} {...props}>
+                    {children}
+                </button>
+            );
+        };
+
+        const Input = ({ label, type = "text", className = "", ...props }) => (
+            <div className="space-y-2">
+                {label && <label className="block text-sm font-medium text-gray-700">{label}</label>}
+                <input
+                    type={type}
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${className}`}
+                    {...props}
+                />
+            </div>
+        );
+
+        const Select = ({ label, options, className = "", ...props }) => (
+            <div className="space-y-2">
+                {label && <label className="block text-sm font-medium text-gray-700">{label}</label>}
+                <select
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${className}`}
+                    {...props}
+                >
+                    {options.map(option => (
+                        <option key={option.value} value={option.value}>
+                            {option.label}
+                        </option>
+                    ))}
+                </select>
+            </div>
+        );
+
+        // Debt Input Component
+        const DebtInput = ({ debt, index, onChange, onDelete, onToggle }) => {
+            const priorityOptions = [
+                { value: 1, label: "🔥 Critical (1)" },
+                { value: 2, label: "⚡ High (2)" },
+                { value: 3, label: "⚠️ Medium (3)" },
+                { value: 4, label: "📊 Low (4)" },
+                { value: 5, label: "💤 Minimal (5)" }
+            ];
+
+            return (
+                <Card className="mb-4 border-l-4 border-blue-500">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold text-gray-800">Debt #{index + 1}</h3>
+                        <div className="flex items-center space-x-2">
+                            <label className="flex items-center">
+                                <input
+                                    type="checkbox"
+                                    checked={debt.enabled}
+                                    onChange={() => onToggle(index)}
+                                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                />
+                                <span className="ml-2 text-sm text-gray-600">Active</span>
+                            </label>
+                            <Button variant="danger" size="sm" onClick={() => onDelete(index)}>
+                                Delete
+                            </Button>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <Input
+                            label="Debt Name"
+                            placeholder="e.g., Credit Card, Student Loan"
+                            value={debt.name}
+                            onChange={(e) => onChange(index, 'name', e.target.value)}
+                        />
+                        
+                        <Input
+                            label="Current Balance ($)"
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            value={debt.current_balance}
+                            onChange={(e) => onChange(index, 'current_balance', e.target.value)}
+                        />
+                        
+                        <Input
+                            label="Interest Rate (%)"
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            value={debt.interest_rate}
+                            onChange={(e) => onChange(index, 'interest_rate', e.target.value)}
+                        />
+                        
+                        <Input
+                            label="Minimum Payment ($)"
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            value={debt.minimum_payment}
+                            onChange={(e) => onChange(index, 'minimum_payment', e.target.value)}
+                        />
+                        
+                        <Select
+                            label="Priority Level"
+                            options={priorityOptions}
+                            value={debt.priority}
+                            onChange={(e) => onChange(index, 'priority', parseInt(e.target.value))}
+                        />
+                        
+                        <div className="flex items-end">
+                            <div className="w-full">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Monthly Interest</label>
+                                <div className="px-3 py-2 bg-gray-100 rounded-lg text-sm font-mono">
+                                    ${((parseFloat(debt.current_balance || 0) * parseFloat(debt.interest_rate || 0) / 100) / 12).toFixed(2)}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </Card>
+            );
+        };
+
+        // Results Display Component
+        const ResultsDisplay = ({ results, strategy }) => {
+            if (!results || results.error) {
+                return (
+                    <Card className="bg-red-50 border-red-200">
+                        <div className="text-red-800">
+                            <h3 className="font-semibold">⚠️ Error</h3>
+                            <p>{results && results.error ? results.error : "Unable to calculate allocation"}</p>
+                        </div>
+                    </Card>
+                );
+            }
+
+            return (
+                <div className="space-y-6">
+                    {/* Summary Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <Card className="text-center">
+                            <div className="text-2xl font-bold text-blue-600">${results.summary.total_allocated}</div>
+                            <div className="text-sm text-gray-600">Total Allocated</div>
+                        </Card>
+                        <Card className="text-center">
+                            <div className="text-2xl font-bold text-green-600">${results.summary.total_principal_paid}</div>
+                            <div className="text-sm text-gray-600">Principal Paid</div>
+                        </Card>
+                        <Card className="text-center">
+                            <div className="text-2xl font-bold text-red-600">${results.summary.total_interest_paid}</div>
+                            <div className="text-sm text-gray-600">Interest Paid</div>
+                        </Card>
+                        <Card className="text-center">
+                            <div className="text-2xl font-bold text-purple-600">${results.summary.remaining_funds}</div>
+                            <div className="text-sm text-gray-600">Remaining Funds</div>
+                        </Card>
+                    </div>
+
+                    {/* Strategy Info */}
+                    <Card>
+                        <h3 className="text-lg font-semibold mb-4">Strategy: {strategy.charAt(0).toUpperCase() + strategy.slice(1)}</h3>
+                        <div className="text-sm text-gray-600">
+                            {strategy === 'avalanche' && "Paying highest interest rate first to minimize total interest paid"}
+                            {strategy === 'snowball' && "Paying smallest balance first for psychological wins"}
+                            {strategy === 'hybrid' && "Balancing priority and interest rate for optimal payoff"}
+                        </div>
+                    </Card>
+
+                    {/* Allocation Table */}
+                    <Card>
+                        <h3 className="text-lg font-semibold mb-4">Monthly Allocation Plan</h3>
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Debt</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Balance</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Interest Rate</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Allocated</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Principal Paid</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">New Balance</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {results.allocations.map((allocation, index) => (
+                                        <tr key={index} className="hover:bg-gray-50">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                {allocation.name}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                ${allocation.current_balance.toLocaleString()}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {allocation.interest_rate}%
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-blue-600">
+                                                ${allocation.allocated}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600">
+                                                ${allocation.principal_paid}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                ${allocation.new_balance.toLocaleString()}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </Card>
+                </div>
+            );
+        };
+
+        // Strategy Comparison Component
+        const StrategyComparison = ({ comparison }) => {
+            if (!comparison) return null;
+
+            return (
+                <Card>
+                    <h3 className="text-lg font-semibold mb-4">Strategy Comparison</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {Object.entries(comparison).map(([strategy, data]) => (
+                            <div key={strategy} className="border rounded-lg p-4">
+                                <h4 className="font-semibold capitalize mb-2">{strategy}</h4>
+                                <div className="space-y-1 text-sm">
+                                    <div>Months to Payoff: <span className="font-semibold">{data.months_to_payoff}</span></div>
+                                    <div>Total Interest: <span className="font-semibold text-red-600">${data.total_interest_paid}</span></div>
+                                    <div>Total Payments: <span className="font-semibold">${data.total_payments}</span></div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </Card>
+            );
+        };
+
+        // Main App Component
+        function App() {
+            const [monthlyIncome, setMonthlyIncome] = useState("8000");
+            const [keepInChecking, setKeepInChecking] = useState("1000");
+            const [debts, setDebts] = useState([]);
+            const [strategy, setStrategy] = useState("avalanche");
+            const [results, setResults] = useState(null);
+            const [comparison, setComparison] = useState(null);
+            const [loading, setLoading] = useState(false);
+            const [activeTab, setActiveTab] = useState("calculator");
+
+            // Load saved data on mount
+            useEffect(() => {
+                const savedDebts = localStorage.getItem("debts");
+                if (savedDebts) {
+                    setDebts(JSON.parse(savedDebts));
+                }
+            }, []);
+
+            // Save debts to localStorage
+            useEffect(() => {
+                localStorage.setItem("debts", JSON.stringify(debts));
+            }, [debts]);
+
+            const addDebt = () => {
+                const newDebt = {
+                    name: "",
+                    current_balance: "",
+                    interest_rate: "",
+                    minimum_payment: "",
+                    priority: 5,
+                    enabled: true
+                };
+                setDebts([...debts, newDebt]);
+            };
+
+            const updateDebt = (index, field, value) => {
+                const newDebts = [...debts];
+                newDebts[index][field] = value;
+                setDebts(newDebts);
+            };
+
+            const deleteDebt = (index) => {
+                setDebts(debts.filter((_, i) => i !== index));
+            };
+
+            const toggleDebt = (index) => {
+                const newDebts = [...debts];
+                newDebts[index].enabled = !newDebts[index].enabled;
+                setDebts(newDebts);
+            };
+
+            const calculateAllocation = async () => {
+                setLoading(true);
+                try {
+                    const activeDebts = debts.filter(debt => debt.enabled && debt.name && debt.current_balance);
+                    
+                    const response = await fetch("/allocate", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            monthly_income: parseFloat(monthlyIncome),
+                            keep_in_checking: parseFloat(keepInChecking),
+                            debts: activeDebts,
+                            strategy: strategy
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    setResults(data);
+                } catch (error) {
+                    console.error("Error calculating allocation:", error);
+                    setResults({ error: "Failed to calculate allocation" });
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const compareStrategies = async () => {
+                setLoading(true);
+                try {
+                    const activeDebts = debts.filter(debt => debt.enabled && debt.name && debt.current_balance);
+                    
+                    const response = await fetch("/compare-strategies", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            monthly_income: parseFloat(monthlyIncome),
+                            keep_in_checking: parseFloat(keepInChecking),
+                            debts: activeDebts
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    setComparison(data);
+                } catch (error) {
+                    console.error("Error comparing strategies:", error);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const totalDebt = debts
+                .filter(debt => debt.enabled && debt.current_balance)
+                .reduce((sum, debt) => sum + parseFloat(debt.current_balance || 0), 0);
+
+            const totalMonthlyInterest = debts
+                .filter(debt => debt.enabled && debt.current_balance && debt.interest_rate)
+                .reduce((sum, debt) => {
+                    const balance = parseFloat(debt.current_balance || 0);
+                    const rate = parseFloat(debt.interest_rate || 0);
+                    return sum + (balance * rate / 100 / 12);
+                }, 0);
+
+            return (
+                <div className="container mx-auto px-4 py-8">
+                    {/* Header */}
+                    <div className="text-center mb-8">
+                        <h1 className="text-4xl font-bold text-gray-900 mb-4">
+                            🚀 Smart Debt Payoff Optimizer
+                        </h1>
+                        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                            Optimize your $8k monthly income to pay off debts faster and save money on interest. 
+                            Choose from multiple strategies and see your payoff timeline.
+                        </p>
+                    </div>
+
+                    {/* Navigation Tabs */}
+                    <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg mb-6">
+                        <button
+                            onClick={() => setActiveTab("calculator")}
+                            className={`flex-1 py-2 px-4 rounded-md font-medium transition-colors ${
+                                activeTab === "calculator" 
+                                    ? "bg-white text-blue-600 shadow-sm" 
+                                    : "text-gray-600 hover:text-gray-900"
+                            }`}
+                        >
+                            Calculator
+                        </button>
+                        <button
+                            onClick={() => setActiveTab("comparison")}
+                            className={`flex-1 py-2 px-4 rounded-md font-medium transition-colors ${
+                                activeTab === "comparison" 
+                                    ? "bg-white text-blue-600 shadow-sm" 
+                                    : "text-gray-600 hover:text-gray-900"
+                            }`}
+                        >
+                            Strategy Comparison
+                        </button>
+                    </div>
+
+                    {activeTab === "calculator" && (
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            {/* Input Panel */}
+                            <div className="lg:col-span-2 space-y-6">
+                                {/* Income and Strategy */}
+                                <Card>
+                                    <h2 className="text-xl font-semibold mb-4">💰 Income & Strategy</h2>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <Input
+                                            label="Monthly Income ($)"
+                                            type="number"
+                                            step="0.01"
+                                            value={monthlyIncome}
+                                            onChange={(e) => setMonthlyIncome(e.target.value)}
+                                            placeholder="8000"
+                                        />
+                                        <Input
+                                            label="Keep in Checking ($)"
+                                            type="number"
+                                            step="0.01"
+                                            value={keepInChecking}
+                                            onChange={(e) => setKeepInChecking(e.target.value)}
+                                            placeholder="1000"
+                                        />
+                                        <Select
+                                            label="Payoff Strategy"
+                                            options={[
+                                                { value: "avalanche", label: "Avalanche (Highest Interest First)" },
+                                                { value: "snowball", label: "Snowball (Smallest Balance First)" },
+                                                { value: "hybrid", label: "Hybrid (Priority + Interest)" }
+                                            ]}
+                                            value={strategy}
+                                            onChange={(e) => setStrategy(e.target.value)}
+                                        />
+                                    </div>
+                                </Card>
+
+                                {/* Debts */}
+                                <Card>
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h2 className="text-xl font-semibold">💳 Your Debts</h2>
+                                        <Button onClick={addDebt}>
+                                            + Add Debt
+                                        </Button>
+                                    </div>
+                                    
+                                    {debts.length === 0 ? (
+                                        <div className="text-center py-8 text-gray-500">
+                                            <p>No debts added yet. Click "Add Debt" to get started!</p>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-4">
+                                            {debts.map((debt, index) => (
+                                                <DebtInput
+                                                    key={index}
+                                                    debt={debt}
+                                                    index={index}
+                                                    onChange={updateDebt}
+                                                    onDelete={deleteDebt}
+                                                    onToggle={toggleDebt}
+                                                />
+                                            ))}
+                                        </div>
+                                    )}
+                                </Card>
+
+                                {/* Calculate Button */}
+                                <Button
+                                    onClick={calculateAllocation}
+                                    disabled={loading || debts.length === 0}
+                                    className="w-full py-3 text-lg"
+                                >
+                                    {loading ? "Calculating..." : "🚀 Calculate Optimal Payoff Plan"}
+                                </Button>
+                            </div>
+
+                            {/* Summary Panel */}
+                            <div className="space-y-6">
+                                <Card>
+                                    <h3 className="text-lg font-semibold mb-4">📊 Summary</h3>
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between">
+                                            <span>Total Debt:</span>
+                                            <span className="font-semibold">${totalDebt.toLocaleString()}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span>Monthly Interest:</span>
+                                            <span className="font-semibold text-red-600">${totalMonthlyInterest.toFixed(2)}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span>Available for Debt:</span>
+                                            <span className="font-semibold text-green-600">
+                                                ${(parseFloat(monthlyIncome) - parseFloat(keepInChecking)).toLocaleString()}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </Card>
+
+                                <Card>
+                                    <h3 className="text-lg font-semibold mb-4">💡 Tips</h3>
+                                    <div className="space-y-2 text-sm text-gray-600">
+                                        <p>• <strong>Avalanche:</strong> Saves the most money on interest</p>
+                                        <p>• <strong>Snowball:</strong> Provides quick wins and motivation</p>
+                                        <p>• <strong>Hybrid:</strong> Balances priority and interest rates</p>
+                                        <p>• Always pay minimum payments to avoid penalties</p>
+                                        <p>• Consider refinancing high-interest debts</p>
+                                    </div>
+                                </Card>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === "comparison" && (
+                        <div className="space-y-6">
+                            <Card>
+                                <h2 className="text-xl font-semibold mb-4">📈 Strategy Comparison</h2>
+                                <p className="text-gray-600 mb-4">
+                                    Compare different payoff strategies to see which one works best for your situation.
+                                </p>
+                                <Button onClick={compareStrategies} disabled={loading || debts.length === 0}>
+                                    {loading ? "Comparing..." : "Compare All Strategies"}
+                                </Button>
+                            </Card>
+                            
+                            {comparison && <StrategyComparison comparison={comparison} />}
+                        </div>
+                    )}
+
+                    {/* Results */}
+                    {results && activeTab === "calculator" && (
+                        <div className="mt-8">
+                            <ResultsDisplay results={results} strategy={strategy} />
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById("root"));
+    </script>
 </body>
-
 </html>

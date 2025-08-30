@@ -1,3 +1,368 @@
-body {
-    font-family: 'Inter', sans-serif;
+/* Custom styles for Smart Debt Payoff Optimizer */
+
+/* Smooth transitions and animations */
+* {
+    transition: all 0.2s ease-in-out;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Gradient backgrounds */
+.gradient-bg {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.gradient-bg-alt {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+/* Card hover effects */
+.card-hover {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Button animations */
+.btn-pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+    }
+}
+
+/* Loading spinner */
+.spinner {
+    border: 2px solid #f3f4f6;
+    border-top: 2px solid #3b82f6;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Priority level indicators */
+.priority-critical {
+    border-left-color: #ef4444;
+    background: linear-gradient(90deg, #fef2f2 0%, #ffffff 100%);
+}
+
+.priority-high {
+    border-left-color: #f97316;
+    background: linear-gradient(90deg, #fff7ed 0%, #ffffff 100%);
+}
+
+.priority-medium {
+    border-left-color: #eab308;
+    background: linear-gradient(90deg, #fefce8 0%, #ffffff 100%);
+}
+
+.priority-low {
+    border-left-color: #22c55e;
+    background: linear-gradient(90deg, #f0fdf4 0%, #ffffff 100%);
+}
+
+.priority-minimal {
+    border-left-color: #6b7280;
+    background: linear-gradient(90deg, #f9fafb 0%, #ffffff 100%);
+}
+
+/* Success/Error states */
+.success-state {
+    border-color: #22c55e;
+    background-color: #f0fdf4;
+}
+
+.error-state {
+    border-color: #ef4444;
+    background-color: #fef2f2;
+}
+
+/* Progress bars */
+.progress-bar {
+    background: linear-gradient(90deg, #3b82f6 0%, #1d4ed8 100%);
+    height: 8px;
+    border-radius: 4px;
+    transition: width 0.3s ease-in-out;
+}
+
+/* Tooltip styles */
+.tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip .tooltiptext {
+    visibility: hidden;
+    width: 200px;
+    background-color: #1f2937;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 8px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -100px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 12px;
+}
+
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Responsive design improvements */
+@media (max-width: 768px) {
+    .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    .grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Focus states for accessibility */
+input:focus,
+select:focus,
+button:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+/* Custom checkbox styling */
+.custom-checkbox {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #d1d5db;
+    border-radius: 4px;
+    background-color: white;
+    cursor: pointer;
+    position: relative;
+}
+
+.custom-checkbox:checked {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+}
+
+.custom-checkbox:checked::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+/* Debt card animations */
+.debt-card {
+    transition: all 0.3s ease-in-out;
+}
+
+.debt-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+/* Summary card highlights */
+.summary-highlight {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.summary-highlight h3 {
+    color: white;
+    margin-bottom: 0.5rem;
+}
+
+/* Strategy comparison cards */
+.strategy-card {
+    border: 2px solid transparent;
+    transition: all 0.3s ease-in-out;
+}
+
+.strategy-card:hover {
+    border-color: #3b82f6;
+    transform: scale(1.02);
+}
+
+.strategy-card.best {
+    border-color: #22c55e;
+    background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
+}
+
+/* Table improvements */
+.table-container {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.table-container table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.table-container th {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.table-container tr:nth-child(even) {
+    background-color: #f9fafb;
+}
+
+.table-container tr:hover {
+    background-color: #f1f5f9;
+}
+
+/* Input group styling */
+.input-group {
+    position: relative;
+}
+
+.input-group input {
+    padding-left: 2.5rem;
+}
+
+.input-group .icon {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6b7280;
+}
+
+/* Badge styling */
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.badge-success {
+    background-color: #dcfce7;
+    color: #166534;
+}
+
+.badge-warning {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.badge-danger {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.badge-info {
+    background-color: #dbeafe;
+    color: #1e40af;
+}
+
+/* Modal overlay */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+/* Print styles */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    .print-break {
+        page-break-before: always;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .dark-mode {
+        background-color: #1f2937;
+        color: #f9fafb;
+    }
+    
+    .dark-mode .card {
+        background-color: #374151;
+        border-color: #4b5563;
+    }
+    
+    .dark-mode input,
+    .dark-mode select {
+        background-color: #374151;
+        border-color: #4b5563;
+        color: #f9fafb;
+    }
 }
