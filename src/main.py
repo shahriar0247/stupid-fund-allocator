@@ -467,9 +467,9 @@ def timeline():
     timeline = calculate_payoff_timeline(monthly_income, keep_in_checking, debts, strategy)
     return jsonify({"timeline": timeline})
 
-def compare_strategies(monthly_income, keep_in_checking, debts):
-    """Compare different debt payoff strategies"""
-    strategies = ["avalanche", "snowball", "hybrid"]
+def compare_strategies(monthly_income, keep_in_checking, debts, emergency_fund=0):
+    """Compare different debt payoff strategies with advanced analysis"""
+    strategies = ["avalanche", "snowball", "hybrid", "due_date", "bonus_optimized"]
     results = {}
     
     # Calculate minimum payment baseline
@@ -489,24 +489,78 @@ def compare_strategies(monthly_income, keep_in_checking, debts):
                 new_balance = float(debt['current_balance']) + interest - payment
                 debt['current_balance'] = max(0, new_balance)
     
+    # Calculate equal payment strategy (the bad one)
+    available_funds = float(monthly_income - keep_in_checking - emergency_fund)
+    extra_funds = available_funds - total_min_payments
+    
+    if extra_funds > 0:
+        # Distribute extra funds equally among all debts
+        equal_extra = extra_funds / len(debts)
+        equal_payment_timeline = []
+        equal_debts = [debt.copy() for debt in debts]
+        month = 0
+        total_interest_equal = 0
+        
+        while any(float(debt['current_balance']) > 0 for debt in equal_debts) and month < 120:
+            month += 1
+            monthly_interest = 0
+            
+            for debt in equal_debts:
+                if float(debt['current_balance']) > 0:
+                    interest = float(debt['current_balance']) * float(debt['interest_rate']) / 100 / 12
+                    monthly_interest += interest
+                    payment = float(debt['minimum_payment']) + equal_extra
+                    new_balance = float(debt['current_balance']) + interest - payment
+                    debt['current_balance'] = max(0, new_balance)
+            
+            total_interest_equal += monthly_interest
+            total_remaining = sum(max(0, float(debt['current_balance'])) for debt in equal_debts)
+            
+            equal_payment_timeline.append({
+                'month': month,
+                'total_remaining': total_remaining,
+                'interest_paid': monthly_interest
+            })
+        
+        results['equal_payment'] = {
+            'months_to_payoff': len(equal_payment_timeline),
+            'total_interest': round(total_interest_equal, 2),
+            'interest_saved': round(total_interest_min_only - total_interest_equal, 2),
+            'bonus_saved': 0,
+            'total_savings': round(total_interest_min_only - total_interest_equal, 2)
+        }
+    else:
+        results['equal_payment'] = {
+            'months_to_payoff': 0,
+            'total_interest': 0,
+            'interest_saved': 0,
+            'bonus_saved': 0,
+            'total_savings': 0
+        }
+    
     for strategy in strategies:
-        timeline = calculate_payoff_timeline(monthly_income, keep_in_checking, debts, strategy)
+        timeline = calculate_payoff_timeline(monthly_income, keep_in_checking, debts, strategy, emergency_fund)
         
         if timeline and 'error' not in timeline[0]:
             total_interest = sum(month['interest_paid'] for month in timeline)
             months_to_payoff = len(timeline)
             interest_saved = total_interest_min_only - total_interest
+            total_bonus_saved = sum(month.get('total_bonus_saved', 0) for month in timeline)
             
             results[strategy] = {
                 'months_to_payoff': months_to_payoff,
                 'total_interest': round(total_interest, 2),
-                'interest_saved': round(interest_saved, 2)
+                'interest_saved': round(interest_saved, 2),
+                'bonus_saved': round(total_bonus_saved, 2),
+                'total_savings': round(interest_saved + total_bonus_saved, 2)
             }
         else:
             results[strategy] = {
                 'months_to_payoff': 0,
                 'total_interest': 0,
-                'interest_saved': 0
+                'interest_saved': 0,
+                'bonus_saved': 0,
+                'total_savings': 0
             }
     
     return results
