@@ -3,64 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Debt Payoff Optimizer</title>
+    <title>Smart Debt Payoff Planner - Pay Off Debt Faster!</title>
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css')}}">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/preline@2.7.0/dist/preline.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 </head>
 
-<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+<body class="bg-gradient-to-br from-red-50 to-orange-50 min-h-screen">
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        // Utility Components
-        const Card = ({ children, className = "", ...props }) => (
-            <div className={`bg-white rounded-xl shadow-lg border border-gray-200 p-6 ${className}`} {...props}>
+        // Simple Components
+        const Card = ({ children, className = "" }) => (
+            <div className={`bg-white rounded-lg shadow-md border border-gray-200 p-6 ${className}`}>
                 {children}
             </div>
         );
 
-        const Button = ({ children, variant = "primary", className = "", ...props }) => {
-            const baseClasses = "px-4 py-2 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2";
-            const variants = {
-                primary: "bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500",
-                secondary: "bg-gray-200 text-gray-800 hover:bg-gray-300 focus:ring-gray-500",
-                success: "bg-green-600 text-white hover:bg-green-700 focus:ring-green-500",
-                danger: "bg-red-600 text-white hover:bg-red-700 focus:ring-red-500",
-                outline: "border border-blue-600 text-blue-600 hover:bg-blue-50 focus:ring-blue-500"
-            };
-            return (
-                <button className={`${baseClasses} ${variants[variant]} ${className}`} {...props}>
-                    {children}
-                </button>
-            );
-        };
+        const Button = ({ children, onClick, disabled = false, className = "" }) => (
+            <button 
+                onClick={onClick} 
+                disabled={disabled}
+                className={`w-full py-3 px-4 rounded-lg font-medium text-white bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors ${className}`}
+            >
+                {children}
+            </button>
+        );
 
-        const Input = ({ label, type = "text", className = "", ...props }) => (
+        const Input = ({ label, type = "text", value, onChange, placeholder, className = "" }) => (
             <div className="space-y-2">
-                {label && <label className="block text-sm font-medium text-gray-700">{label}</label>}
+                <label className="block text-sm font-medium text-gray-700">{label}</label>
                 <input
                     type={type}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${className}`}
-                    {...props}
+                    value={value}
+                    onChange={onChange}
+                    placeholder={placeholder}
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent ${className}`}
                 />
             </div>
         );
 
-        const Select = ({ label, options, className = "", ...props }) => (
+        const Select = ({ label, value, onChange, options }) => (
             <div className="space-y-2">
-                {label && <label className="block text-sm font-medium text-gray-700">{label}</label>}
+                <label className="block text-sm font-medium text-gray-700">{label}</label>
                 <select
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${className}`}
-                    {...props}
+                    value={value}
+                    onChange={onChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
                 >
                     {options.map(option => (
                         <option key={option.value} value={option.value}>
@@ -71,490 +65,482 @@
             </div>
         );
 
-        // Debt Input Component
-        const DebtInput = ({ debt, index, onChange, onDelete, onToggle }) => {
-            const priorityOptions = [
-                { value: 1, label: "🔥 Critical (1)" },
-                { value: 2, label: "⚡ High (2)" },
-                { value: 3, label: "⚠️ Medium (3)" },
-                { value: 4, label: "📊 Low (4)" },
-                { value: 5, label: "💤 Minimal (5)" }
-            ];
+        // Step Components
+        const Step1Income = ({ monthlyIncome, setMonthlyIncome, onNext }) => (
+            <Card>
+                <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Step 1: How much money do you have to pay off debt?</h2>
+                <div className="max-w-md mx-auto space-y-6">
+                    <Input
+                        label="Your Monthly Income (after taxes)"
+                        type="number"
+                        value={monthlyIncome}
+                        onChange={(e) => setMonthlyIncome(e.target.value)}
+                        placeholder="e.g., 5000"
+                    />
+                    <div className="text-sm text-gray-600 text-center">
+                        💡 This is how much you can put toward debt each month
+                    </div>
+                    <Button onClick={onNext} disabled={!monthlyIncome}>
+                        Next: Add My Debts
+                    </Button>
+                </div>
+            </Card>
+        );
+
+        const Step2Debts = ({ debts, setDebts, onNext, onBack }) => {
+            const [newDebt, setNewDebt] = useState({ 
+                name: "", 
+                current_balance: "", 
+                interest_rate: "", 
+                minimum_payment: "",
+                priority: "medium"
+            });
+
+            const addDebt = () => {
+                if (newDebt.name && newDebt.current_balance && newDebt.interest_rate && newDebt.minimum_payment) {
+                    setDebts([...debts, { ...newDebt, id: Date.now() }]);
+                    setNewDebt({ 
+                        name: "", 
+                        current_balance: "", 
+                        interest_rate: "", 
+                        minimum_payment: "",
+                        priority: "medium"
+                    });
+                }
+            };
+
+            const removeDebt = (id) => {
+                setDebts(debts.filter(debt => debt.id !== id));
+            };
+
+            const totalDebt = debts.reduce((sum, debt) => sum + parseFloat(debt.current_balance || 0), 0);
+            const totalMonthlyInterest = debts.reduce((sum, debt) => {
+                const balance = parseFloat(debt.current_balance || 0);
+                const rate = parseFloat(debt.interest_rate || 0);
+                return sum + (balance * rate / 100 / 12);
+            }, 0);
 
             return (
-                <Card className="mb-4 border-l-4 border-blue-500">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold text-gray-800">Debt #{index + 1}</h3>
-                        <div className="flex items-center space-x-2">
-                            <label className="flex items-center">
-                                <input
-                                    type="checkbox"
-                                    checked={debt.enabled}
-                                    onChange={() => onToggle(index)}
-                                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                <Card>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Step 2: What debts do you have?</h2>
+                    
+                    <div className="max-w-4xl mx-auto space-y-6">
+                        {/* Add New Debt */}
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                            <h3 className="font-semibold mb-3">Add a new debt:</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+                                <Input
+                                    label="Debt Name"
+                                    value={newDebt.name}
+                                    onChange={(e) => setNewDebt({...newDebt, name: e.target.value})}
+                                    placeholder="e.g., Credit Card"
                                 />
-                                <span className="ml-2 text-sm text-gray-600">Active</span>
-                            </label>
-                            <Button variant="danger" size="sm" onClick={() => onDelete(index)}>
-                                Delete
+                                <Input
+                                    label="Current Balance ($)"
+                                    type="number"
+                                    value={newDebt.current_balance}
+                                    onChange={(e) => setNewDebt({...newDebt, current_balance: e.target.value})}
+                                    placeholder="5000"
+                                />
+                                <Input
+                                    label="Interest Rate (%)"
+                                    type="number"
+                                    value={newDebt.interest_rate}
+                                    onChange={(e) => setNewDebt({...newDebt, interest_rate: e.target.value})}
+                                    placeholder="18.99"
+                                />
+                                <Input
+                                    label="Minimum Payment ($)"
+                                    type="number"
+                                    value={newDebt.minimum_payment}
+                                    onChange={(e) => setNewDebt({...newDebt, minimum_payment: e.target.value})}
+                                    placeholder="150"
+                                />
+                                <Select
+                                    label="Priority"
+                                    value={newDebt.priority}
+                                    onChange={(e) => setNewDebt({...newDebt, priority: e.target.value})}
+                                    options={[
+                                        { value: "high", label: "🔥 High Priority" },
+                                        { value: "medium", label: "⚡ Medium Priority" },
+                                        { value: "low", label: "📌 Low Priority" }
+                                    ]}
+                                />
+                            </div>
+                            <Button onClick={addDebt} className="mt-3" disabled={!newDebt.name || !newDebt.current_balance || !newDebt.interest_rate || !newDebt.minimum_payment}>
+                                Add This Debt
                             </Button>
                         </div>
-                    </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <Input
-                            label="Debt Name"
-                            placeholder="e.g., Credit Card, Student Loan"
-                            value={debt.name}
-                            onChange={(e) => onChange(index, 'name', e.target.value)}
-                        />
-                        
-                        <Input
-                            label="Current Balance ($)"
-                            type="number"
-                            step="0.01"
-                            placeholder="0.00"
-                            value={debt.current_balance}
-                            onChange={(e) => onChange(index, 'current_balance', e.target.value)}
-                        />
-                        
-                        <Input
-                            label="Interest Rate (%)"
-                            type="number"
-                            step="0.01"
-                            placeholder="0.00"
-                            value={debt.interest_rate}
-                            onChange={(e) => onChange(index, 'interest_rate', e.target.value)}
-                        />
-                        
-                        <Input
-                            label="Minimum Payment ($)"
-                            type="number"
-                            step="0.01"
-                            placeholder="0.00"
-                            value={debt.minimum_payment}
-                            onChange={(e) => onChange(index, 'minimum_payment', e.target.value)}
-                        />
-                        
-                        <Select
-                            label="Priority Level"
-                            options={priorityOptions}
-                            value={debt.priority}
-                            onChange={(e) => onChange(index, 'priority', parseInt(e.target.value))}
-                        />
-                        
-                        <div className="flex items-end">
-                            <div className="w-full">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Monthly Interest</label>
-                                <div className="px-3 py-2 bg-gray-100 rounded-lg text-sm font-mono">
-                                    ${((parseFloat(debt.current_balance || 0) * parseFloat(debt.interest_rate || 0) / 100) / 12).toFixed(2)}
+                        {/* Current Debts */}
+                        {debts.length > 0 && (
+                            <div>
+                                <h3 className="font-semibold mb-3">Your current debts:</h3>
+                                <div className="space-y-2">
+                                    {debts.map(debt => (
+                                        <div key={debt.id} className="flex justify-between items-center bg-white p-3 rounded border">
+                                            <div className="flex items-center space-x-3">
+                                                <div>
+                                                    <span className="font-medium">{debt.name}</span>
+                                                    <span className={`ml-2 px-2 py-1 rounded text-xs ${
+                                                        debt.priority === 'high' ? 'bg-red-100 text-red-800' :
+                                                        debt.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                                                        'bg-gray-100 text-gray-800'
+                                                    }`}>
+                                                        {debt.priority === 'high' ? '🔥 High' : 
+                                                         debt.priority === 'medium' ? '⚡ Medium' : '📌 Low'}
+                                                    </span>
+                                                </div>
+                                                <div className="text-sm text-gray-500">
+                                                    ${debt.current_balance} @ {debt.interest_rate}%
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center space-x-2">
+                                                <span className="text-sm text-gray-500">Min: ${debt.minimum_payment}</span>
+                                                <button 
+                                                    onClick={() => removeDebt(debt.id)}
+                                                    className="text-red-500 hover:text-red-700"
+                                                >
+                                                    ✕
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="mt-3 p-3 bg-red-50 rounded">
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                                        <div>
+                                            <div className="text-lg font-bold text-red-600">${totalDebt.toLocaleString()}</div>
+                                            <div className="text-sm text-gray-600">Total Debt</div>
+                                        </div>
+                                        <div>
+                                            <div className="text-lg font-bold text-orange-600">${totalMonthlyInterest.toFixed(2)}</div>
+                                            <div className="text-sm text-gray-600">Monthly Interest</div>
+                                        </div>
+                                        <div>
+                                            <div className="text-lg font-bold text-blue-600">
+                                                ${debts.reduce((sum, debt) => sum + parseFloat(debt.minimum_payment || 0), 0).toLocaleString()}
+                                            </div>
+                                            <div className="text-sm text-gray-600">Total Min Payments</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
+                        )}
+
+                        <div className="flex space-x-3">
+                            <Button onClick={onBack} className="bg-gray-500 hover:bg-gray-600">
+                                ← Back
+                            </Button>
+                            <Button onClick={onNext} disabled={debts.length === 0}>
+                                Next: See My Payoff Plan
+                            </Button>
                         </div>
                     </div>
                 </Card>
             );
         };
 
-        // Results Display Component
-        const ResultsDisplay = ({ results, strategy }) => {
-            if (!results || results.error) {
+        const Step3Results = ({ monthlyIncome, debts, onBack, onRestart }) => {
+            const [results, setResults] = useState(null);
+            const [loading, setLoading] = useState(true);
+            const [activeTab, setActiveTab] = useState('plan');
+
+            useEffect(() => {
+                const calculatePlan = async () => {
+                    try {
+                        const response = await fetch("/allocate", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                monthly_income: parseFloat(monthlyIncome),
+                                keep_in_checking: 0,
+                                debts: debts,
+                                strategy: "avalanche"
+                            })
+                        });
+                        
+                        const data = await response.json();
+                        if (response.ok) {
+                            setResults(data);
+                        } else {
+                            setResults({ error: data.error || "Something went wrong. Please try again." });
+                        }
+                    } catch (error) {
+                        setResults({ error: "Something went wrong. Please try again." });
+                    } finally {
+                        setLoading(false);
+                    }
+                };
+
+                calculatePlan();
+            }, [monthlyIncome, debts]);
+
+            if (loading) {
                 return (
-                    <Card className="bg-red-50 border-red-200">
-                        <div className="text-red-800">
-                            <h3 className="font-semibold">⚠️ Error</h3>
-                            <p>{results && results.error ? results.error : "Unable to calculate allocation"}</p>
+                    <Card>
+                        <div className="text-center py-8">
+                            <div className="text-2xl mb-4">🤔</div>
+                            <h2 className="text-xl font-semibold mb-2">Creating your debt payoff plan...</h2>
+                            <p className="text-gray-600">This will just take a moment!</p>
                         </div>
                     </Card>
                 );
             }
 
-            return (
-                <div className="space-y-6">
-                    {/* Summary Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <Card className="text-center">
-                            <div className="text-2xl font-bold text-blue-600">${results.summary.total_allocated}</div>
-                            <div className="text-sm text-gray-600">Total Allocated</div>
-                        </Card>
-                        <Card className="text-center">
-                            <div className="text-2xl font-bold text-green-600">${results.summary.total_principal_paid}</div>
-                            <div className="text-sm text-gray-600">Principal Paid</div>
-                        </Card>
-                        <Card className="text-center">
-                            <div className="text-2xl font-bold text-red-600">${results.summary.total_interest_paid}</div>
-                            <div className="text-sm text-gray-600">Interest Paid</div>
-                        </Card>
-                        <Card className="text-center">
-                            <div className="text-2xl font-bold text-purple-600">${results.summary.remaining_funds}</div>
-                            <div className="text-sm text-gray-600">Remaining Funds</div>
-                        </Card>
-                    </div>
-
-                    {/* Strategy Info */}
+            if (results.error) {
+                return (
                     <Card>
-                        <h3 className="text-lg font-semibold mb-4">Strategy: {strategy.charAt(0).toUpperCase() + strategy.slice(1)}</h3>
-                        <div className="text-sm text-gray-600">
-                            {strategy === 'avalanche' && "Paying highest interest rate first to minimize total interest paid"}
-                            {strategy === 'snowball' && "Paying smallest balance first for psychological wins"}
-                            {strategy === 'hybrid' && "Balancing priority and interest rate for optimal payoff"}
+                        <div className="text-center py-8">
+                            <div className="text-2xl mb-4">⚠️</div>
+                            <h2 className="text-xl font-semibold mb-2">Oops!</h2>
+                            <p className="text-gray-600 mb-4">{results.error}</p>
+                            <Button onClick={onRestart}>Start Over</Button>
                         </div>
                     </Card>
+                );
+            }
 
-                    {/* Allocation Table */}
+            const totalDebt = debts.reduce((sum, debt) => sum + parseFloat(debt.current_balance || 0), 0);
+            const totalMinPayments = debts.reduce((sum, debt) => sum + parseFloat(debt.minimum_payment || 0), 0);
+            const extraPayment = parseFloat(monthlyIncome) - totalMinPayments;
+
+            return (
+                <div className="space-y-6">
                     <Card>
-                        <h3 className="text-lg font-semibold mb-4">Monthly Allocation Plan</h3>
-                        <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Debt</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Balance</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Interest Rate</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Allocated</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Principal Paid</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">New Balance</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
-                                    {results.allocations.map((allocation, index) => (
-                                        <tr key={index} className="hover:bg-gray-50">
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                {allocation.name}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                ${allocation.current_balance.toLocaleString()}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {allocation.interest_rate}%
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-blue-600">
-                                                ${allocation.allocated}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600">
-                                                ${allocation.principal_paid}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                ${allocation.new_balance.toLocaleString()}
-                                            </td>
-                                        </tr>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Your Smart Debt Payoff Plan</h2>
+                        
+                        {/* Tab Navigation */}
+                        <div className="flex space-x-1 mb-6 bg-gray-100 p-1 rounded-lg">
+                            <button
+                                onClick={() => setActiveTab('plan')}
+                                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                                    activeTab === 'plan' ? 'bg-white text-red-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                                }`}
+                            >
+                                📋 Payoff Plan
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('timeline')}
+                                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                                    activeTab === 'timeline' ? 'bg-white text-red-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                                }`}
+                            >
+                                📅 Timeline
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('compare')}
+                                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                                    activeTab === 'compare' ? 'bg-white text-red-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                                }`}
+                            >
+                                ⚖️ Compare Strategies
+                            </button>
+                        </div>
+
+                        {/* Summary Cards */}
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                            <div className="text-center p-4 bg-green-50 rounded-lg">
+                                <div className="text-2xl font-bold text-green-600">${monthlyIncome.toLocaleString()}</div>
+                                <div className="text-sm text-gray-600">Monthly Income</div>
+                            </div>
+                            <div className="text-center p-4 bg-red-50 rounded-lg">
+                                <div className="text-2xl font-bold text-red-600">${totalDebt.toLocaleString()}</div>
+                                <div className="text-sm text-gray-600">Total Debt</div>
+                            </div>
+                            <div className="text-center p-4 bg-blue-50 rounded-lg">
+                                <div className="text-2xl font-bold text-blue-600">${totalMinPayments.toLocaleString()}</div>
+                                <div className="text-sm text-gray-600">Min Payments</div>
+                            </div>
+                            <div className="text-center p-4 bg-purple-50 rounded-lg">
+                                <div className="text-2xl font-bold text-purple-600">${extraPayment.toLocaleString()}</div>
+                                <div className="text-sm text-gray-600">Extra for Debt</div>
+                            </div>
+                        </div>
+
+                        {/* Tab Content */}
+                        {activeTab === 'plan' && results.allocation && (
+                            <div className="space-y-6">
+                                <div className="bg-blue-50 p-4 rounded-lg">
+                                    <h3 className="font-semibold mb-3">🎯 Your Payoff Strategy: Avalanche Method</h3>
+                                    <p className="text-sm text-gray-700">
+                                        Pay minimums on all debts, then put extra money toward the debt with the highest interest rate. 
+                                        This saves you the most money in interest!
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <h3 className="font-semibold mb-3">📋 Monthly Payment Plan:</h3>
+                                    <div className="space-y-3">
+                                        {results.allocation.map((debt, index) => (
+                                            <div key={index} className="flex justify-between items-center bg-white p-3 rounded border">
+                                                <div>
+                                                    <span className="font-medium">{debt.name}</span>
+                                                    <span className="text-sm text-gray-500 ml-2">
+                                                        (${debt.current_balance} @ {debt.interest_rate}%)
+                                                    </span>
+                                                </div>
+                                                <div className="text-right">
+                                                    <div className="font-semibold">${debt.allocated}</div>
+                                                    <div className="text-sm text-gray-500">
+                                                        Min: ${debt.minimum_payment} + Extra: ${(debt.allocated - debt.minimum_payment).toFixed(2)}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {results.total_interest_saved && (
+                                    <div className="bg-green-50 p-4 rounded-lg">
+                                        <h3 className="font-semibold mb-2">💰 Money You'll Save:</h3>
+                                        <div className="text-2xl font-bold text-green-600">
+                                            ${results.total_interest_saved.toLocaleString()} in interest!
+                                        </div>
+                                        <p className="text-sm text-gray-600 mt-1">
+                                            Compared to making only minimum payments
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {activeTab === 'timeline' && (
+                            <div className="space-y-6">
+                                <div className="bg-yellow-50 p-4 rounded-lg">
+                                    <h3 className="font-semibold mb-3">📅 When Will You Be Debt Free?</h3>
+                                    <p className="text-sm text-gray-700">
+                                        This shows how long it will take to pay off all your debts with this plan.
+                                    </p>
+                                </div>
+
+                                <div className="space-y-4">
+                                    {results.timeline && results.timeline.map((month, index) => (
+                                        <div key={index} className="bg-white p-4 rounded border">
+                                            <div className="flex justify-between items-center mb-2">
+                                                <h4 className="font-semibold">Month {month.month}</h4>
+                                                <span className="text-sm text-gray-500">
+                                                    ${month.total_remaining.toLocaleString()} remaining
+                                                </span>
+                                            </div>
+                                            <div className="text-sm text-gray-600">
+                                                {month.debts_paid_off.length > 0 && (
+                                                    <div className="mb-2">
+                                                        <span className="text-green-600 font-medium">✓ Paid off:</span> {month.debts_paid_off.join(', ')}
+                                                    </div>
+                                                )}
+                                                <div className="text-sm">
+                                                    Interest paid this month: ${month.interest_paid.toFixed(2)}
+                                                </div>
+                                            </div>
+                                        </div>
                                     ))}
-                                </tbody>
-                            </table>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'compare' && (
+                            <div className="space-y-6">
+                                <div className="bg-purple-50 p-4 rounded-lg">
+                                    <h3 className="font-semibold mb-3">⚖️ Compare Different Payoff Strategies</h3>
+                                    <p className="text-sm text-gray-700">
+                                        See how different approaches affect your payoff timeline and total interest paid.
+                                    </p>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    {results.strategy_comparison && Object.entries(results.strategy_comparison).map(([strategy, data]) => (
+                                        <div key={strategy} className="bg-white p-4 rounded border">
+                                            <h4 className="font-semibold mb-2">
+                                                {strategy === 'avalanche' ? '🔥 Avalanche' :
+                                                 strategy === 'snowball' ? '❄️ Snowball' :
+                                                 '🎯 Hybrid'}
+                                            </h4>
+                                            <div className="space-y-2 text-sm">
+                                                <div>
+                                                    <span className="text-gray-600">Total Interest:</span>
+                                                    <span className="font-medium ml-1">${data.total_interest.toLocaleString()}</span>
+                                                </div>
+                                                <div>
+                                                    <span className="text-gray-600">Payoff Time:</span>
+                                                    <span className="font-medium ml-1">{data.months_to_payoff} months</span>
+                                                </div>
+                                                <div>
+                                                    <span className="text-gray-600">Interest Saved:</span>
+                                                    <span className="font-medium ml-1 text-green-600">${data.interest_saved.toLocaleString()}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="flex space-x-3">
+                            <Button onClick={onBack} className="bg-gray-500 hover:bg-gray-600">
+                                ← Back to Debts
+                            </Button>
+                            <Button onClick={onRestart} className="bg-green-600 hover:bg-green-700">
+                                Start Over
+                            </Button>
                         </div>
                     </Card>
                 </div>
             );
         };
 
-        // Strategy Comparison Component
-        const StrategyComparison = ({ comparison }) => {
-            if (!comparison) return null;
-
-            return (
-                <Card>
-                    <h3 className="text-lg font-semibold mb-4">Strategy Comparison</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {Object.entries(comparison).map(([strategy, data]) => (
-                            <div key={strategy} className="border rounded-lg p-4">
-                                <h4 className="font-semibold capitalize mb-2">{strategy}</h4>
-                                <div className="space-y-1 text-sm">
-                                    <div>Months to Payoff: <span className="font-semibold">{data.months_to_payoff}</span></div>
-                                    <div>Total Interest: <span className="font-semibold text-red-600">${data.total_interest_paid}</span></div>
-                                    <div>Total Payments: <span className="font-semibold">${data.total_payments}</span></div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </Card>
-            );
-        };
-
-        // Main App Component
+        // Main App
         function App() {
-            const [monthlyIncome, setMonthlyIncome] = useState("8000");
-            const [keepInChecking, setKeepInChecking] = useState("1000");
+            const [step, setStep] = useState(1);
+            const [monthlyIncome, setMonthlyIncome] = useState("");
             const [debts, setDebts] = useState([]);
-            const [strategy, setStrategy] = useState("avalanche");
-            const [results, setResults] = useState(null);
-            const [comparison, setComparison] = useState(null);
-            const [loading, setLoading] = useState(false);
-            const [activeTab, setActiveTab] = useState("calculator");
 
-            // Load saved data on mount
-            useEffect(() => {
-                const savedDebts = localStorage.getItem("debts");
-                if (savedDebts) {
-                    setDebts(JSON.parse(savedDebts));
-                }
-            }, []);
-
-            // Save debts to localStorage
-            useEffect(() => {
-                localStorage.setItem("debts", JSON.stringify(debts));
-            }, [debts]);
-
-            const addDebt = () => {
-                const newDebt = {
-                    name: "",
-                    current_balance: "",
-                    interest_rate: "",
-                    minimum_payment: "",
-                    priority: 5,
-                    enabled: true
-                };
-                setDebts([...debts, newDebt]);
+            const nextStep = () => setStep(step + 1);
+            const prevStep = () => setStep(step - 1);
+            const restart = () => {
+                setStep(1);
+                setMonthlyIncome("");
+                setDebts([]);
             };
-
-            const updateDebt = (index, field, value) => {
-                const newDebts = [...debts];
-                newDebts[index][field] = value;
-                setDebts(newDebts);
-            };
-
-            const deleteDebt = (index) => {
-                setDebts(debts.filter((_, i) => i !== index));
-            };
-
-            const toggleDebt = (index) => {
-                const newDebts = [...debts];
-                newDebts[index].enabled = !newDebts[index].enabled;
-                setDebts(newDebts);
-            };
-
-            const calculateAllocation = async () => {
-                setLoading(true);
-                try {
-                    const activeDebts = debts.filter(debt => debt.enabled && debt.name && debt.current_balance);
-                    
-                    const response = await fetch("/allocate", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            monthly_income: parseFloat(monthlyIncome),
-                            keep_in_checking: parseFloat(keepInChecking),
-                            debts: activeDebts,
-                            strategy: strategy
-                        })
-                    });
-                    
-                    const data = await response.json();
-                    setResults(data);
-                } catch (error) {
-                    console.error("Error calculating allocation:", error);
-                    setResults({ error: "Failed to calculate allocation" });
-                } finally {
-                    setLoading(false);
-                }
-            };
-
-            const compareStrategies = async () => {
-                setLoading(true);
-                try {
-                    const activeDebts = debts.filter(debt => debt.enabled && debt.name && debt.current_balance);
-                    
-                    const response = await fetch("/compare-strategies", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            monthly_income: parseFloat(monthlyIncome),
-                            keep_in_checking: parseFloat(keepInChecking),
-                            debts: activeDebts
-                        })
-                    });
-                    
-                    const data = await response.json();
-                    setComparison(data);
-                } catch (error) {
-                    console.error("Error comparing strategies:", error);
-                } finally {
-                    setLoading(false);
-                }
-            };
-
-            const totalDebt = debts
-                .filter(debt => debt.enabled && debt.current_balance)
-                .reduce((sum, debt) => sum + parseFloat(debt.current_balance || 0), 0);
-
-            const totalMonthlyInterest = debts
-                .filter(debt => debt.enabled && debt.current_balance && debt.interest_rate)
-                .reduce((sum, debt) => {
-                    const balance = parseFloat(debt.current_balance || 0);
-                    const rate = parseFloat(debt.interest_rate || 0);
-                    return sum + (balance * rate / 100 / 12);
-                }, 0);
 
             return (
                 <div className="container mx-auto px-4 py-8">
                     {/* Header */}
                     <div className="text-center mb-8">
                         <h1 className="text-4xl font-bold text-gray-900 mb-4">
-                            🚀 Smart Debt Payoff Optimizer
+                            💳 Smart Debt Payoff Planner
                         </h1>
                         <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                            Optimize your $8k monthly income to pay off debts faster and save money on interest. 
-                            Choose from multiple strategies and see your payoff timeline.
+                            Pay off your debts faster and save thousands in interest with smart strategies
                         </p>
                     </div>
 
-                    {/* Navigation Tabs */}
-                    <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg mb-6">
-                        <button
-                            onClick={() => setActiveTab("calculator")}
-                            className={`flex-1 py-2 px-4 rounded-md font-medium transition-colors ${
-                                activeTab === "calculator" 
-                                    ? "bg-white text-blue-600 shadow-sm" 
-                                    : "text-gray-600 hover:text-gray-900"
-                            }`}
-                        >
-                            Calculator
-                        </button>
-                        <button
-                            onClick={() => setActiveTab("comparison")}
-                            className={`flex-1 py-2 px-4 rounded-md font-medium transition-colors ${
-                                activeTab === "comparison" 
-                                    ? "bg-white text-blue-600 shadow-sm" 
-                                    : "text-gray-600 hover:text-gray-900"
-                            }`}
-                        >
-                            Strategy Comparison
-                        </button>
+                    {/* Progress Bar */}
+                    <div className="max-w-2xl mx-auto mb-8">
+                        <div className="flex items-center justify-between">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                                step >= 1 ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-500'
+                            }`}>1</div>
+                            <div className={`flex-1 h-1 ${step >= 2 ? 'bg-red-600' : 'bg-gray-200'}`}></div>
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                                step >= 2 ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-500'
+                            }`}>2</div>
+                            <div className={`flex-1 h-1 ${step >= 3 ? 'bg-red-600' : 'bg-gray-200'}`}></div>
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                                step >= 3 ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-500'
+                            }`}>3</div>
+                        </div>
+                        <div className="flex justify-between mt-2 text-sm text-gray-600">
+                            <span>Income</span>
+                            <span>Debts</span>
+                            <span>Plan</span>
+                        </div>
                     </div>
 
-                    {activeTab === "calculator" && (
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            {/* Input Panel */}
-                            <div className="lg:col-span-2 space-y-6">
-                                {/* Income and Strategy */}
-                                <Card>
-                                    <h2 className="text-xl font-semibold mb-4">💰 Income & Strategy</h2>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        <Input
-                                            label="Monthly Income ($)"
-                                            type="number"
-                                            step="0.01"
-                                            value={monthlyIncome}
-                                            onChange={(e) => setMonthlyIncome(e.target.value)}
-                                            placeholder="8000"
-                                        />
-                                        <Input
-                                            label="Keep in Checking ($)"
-                                            type="number"
-                                            step="0.01"
-                                            value={keepInChecking}
-                                            onChange={(e) => setKeepInChecking(e.target.value)}
-                                            placeholder="1000"
-                                        />
-                                        <Select
-                                            label="Payoff Strategy"
-                                            options={[
-                                                { value: "avalanche", label: "Avalanche (Highest Interest First)" },
-                                                { value: "snowball", label: "Snowball (Smallest Balance First)" },
-                                                { value: "hybrid", label: "Hybrid (Priority + Interest)" }
-                                            ]}
-                                            value={strategy}
-                                            onChange={(e) => setStrategy(e.target.value)}
-                                        />
-                                    </div>
-                                </Card>
-
-                                {/* Debts */}
-                                <Card>
-                                    <div className="flex justify-between items-center mb-4">
-                                        <h2 className="text-xl font-semibold">💳 Your Debts</h2>
-                                        <Button onClick={addDebt}>
-                                            + Add Debt
-                                        </Button>
-                                    </div>
-                                    
-                                    {debts.length === 0 ? (
-                                        <div className="text-center py-8 text-gray-500">
-                                            <p>No debts added yet. Click "Add Debt" to get started!</p>
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-4">
-                                            {debts.map((debt, index) => (
-                                                <DebtInput
-                                                    key={index}
-                                                    debt={debt}
-                                                    index={index}
-                                                    onChange={updateDebt}
-                                                    onDelete={deleteDebt}
-                                                    onToggle={toggleDebt}
-                                                />
-                                            ))}
-                                        </div>
-                                    )}
-                                </Card>
-
-                                {/* Calculate Button */}
-                                <Button
-                                    onClick={calculateAllocation}
-                                    disabled={loading || debts.length === 0}
-                                    className="w-full py-3 text-lg"
-                                >
-                                    {loading ? "Calculating..." : "🚀 Calculate Optimal Payoff Plan"}
-                                </Button>
-                            </div>
-
-                            {/* Summary Panel */}
-                            <div className="space-y-6">
-                                <Card>
-                                    <h3 className="text-lg font-semibold mb-4">📊 Summary</h3>
-                                    <div className="space-y-3">
-                                        <div className="flex justify-between">
-                                            <span>Total Debt:</span>
-                                            <span className="font-semibold">${totalDebt.toLocaleString()}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span>Monthly Interest:</span>
-                                            <span className="font-semibold text-red-600">${totalMonthlyInterest.toFixed(2)}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span>Available for Debt:</span>
-                                            <span className="font-semibold text-green-600">
-                                                ${(parseFloat(monthlyIncome) - parseFloat(keepInChecking)).toLocaleString()}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </Card>
-
-                                <Card>
-                                    <h3 className="text-lg font-semibold mb-4">💡 Tips</h3>
-                                    <div className="space-y-2 text-sm text-gray-600">
-                                        <p>• <strong>Avalanche:</strong> Saves the most money on interest</p>
-                                        <p>• <strong>Snowball:</strong> Provides quick wins and motivation</p>
-                                        <p>• <strong>Hybrid:</strong> Balances priority and interest rates</p>
-                                        <p>• Always pay minimum payments to avoid penalties</p>
-                                        <p>• Consider refinancing high-interest debts</p>
-                                    </div>
-                                </Card>
-                            </div>
-                        </div>
-                    )}
-
-                    {activeTab === "comparison" && (
-                        <div className="space-y-6">
-                            <Card>
-                                <h2 className="text-xl font-semibold mb-4">📈 Strategy Comparison</h2>
-                                <p className="text-gray-600 mb-4">
-                                    Compare different payoff strategies to see which one works best for your situation.
-                                </p>
-                                <Button onClick={compareStrategies} disabled={loading || debts.length === 0}>
-                                    {loading ? "Comparing..." : "Compare All Strategies"}
-                                </Button>
-                            </Card>
-                            
-                            {comparison && <StrategyComparison comparison={comparison} />}
-                        </div>
-                    )}
-
-                    {/* Results */}
-                    {results && activeTab === "calculator" && (
-                        <div className="mt-8">
-                            <ResultsDisplay results={results} strategy={strategy} />
-                        </div>
-                    )}
+                    {/* Step Content */}
+                    {step === 1 && <Step1Income monthlyIncome={monthlyIncome} setMonthlyIncome={setMonthlyIncome} onNext={nextStep} />}
+                    {step === 2 && <Step2Debts debts={debts} setDebts={setDebts} onNext={nextStep} onBack={prevStep} />}
+                    {step === 3 && <Step3Results monthlyIncome={monthlyIncome} debts={debts} onBack={prevStep} onRestart={restart} />}
                 </div>
             );
         }
