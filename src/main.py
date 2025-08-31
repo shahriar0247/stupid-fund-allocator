@@ -292,7 +292,16 @@ def calculate_debt_payoff_plan(monthly_income, keep_in_checking, debts, strategy
         debt_copy['current_balance'] = float(debt['current_balance'])
         debt_copy['interest_rate'] = float(debt['interest_rate'])
         debt_copy['minimum_payment'] = float(debt['minimum_payment'])
-        debt_copy['priority'] = int(debt.get('priority', 5))
+        # Convert priority string to numeric value
+        priority_str = debt.get('priority', 'medium')
+        if priority_str == 'high':
+            debt_copy['priority'] = 1
+        elif priority_str == 'medium':
+            debt_copy['priority'] = 2
+        elif priority_str == 'low':
+            debt_copy['priority'] = 3
+        else:
+            debt_copy['priority'] = 2  # default to medium
         debts_copy.append(debt_copy)
     
     # Sort debts based on strategy
@@ -417,7 +426,7 @@ def calculate_payoff_timeline(monthly_income, keep_in_checking, debts, strategy)
         
         # Track which debts were paid off this month
         debts_paid_off = []
-        for i, allocation in enumerate(result['allocation']):
+        for i, allocation in enumerate(result['allocations']):
             old_balance = float(current_debts[i]['current_balance'])
             new_balance = allocation['new_balance']
             if old_balance > 0 and new_balance <= 0:
@@ -425,7 +434,7 @@ def calculate_payoff_timeline(monthly_income, keep_in_checking, debts, strategy)
             current_debts[i]['current_balance'] = new_balance
         
         # Calculate interest paid this month
-        interest_paid = sum(allocation['interest_paid'] for allocation in result['allocation'])
+        interest_paid = sum(allocation['interest_paid'] for allocation in result['allocations'])
         total_interest_paid += interest_paid
         
         # Calculate total remaining debt
