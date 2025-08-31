@@ -467,7 +467,7 @@ def timeline():
     timeline = calculate_payoff_timeline(monthly_income, keep_in_checking, debts, strategy)
     return jsonify({"timeline": timeline})
 
-def compare_strategies(monthly_income, keep_in_checking, debts, emergency_fund=0):
+def compare_strategies(monthly_income, keep_in_checking, debts):
     """Compare different debt payoff strategies with advanced analysis"""
     strategies = ["avalanche", "snowball", "hybrid", "due_date", "bonus_optimized"]
     results = {}
@@ -490,7 +490,7 @@ def compare_strategies(monthly_income, keep_in_checking, debts, emergency_fund=0
                 debt['current_balance'] = max(0, new_balance)
     
     # Calculate equal payment strategy (the bad one)
-    available_funds = float(monthly_income - keep_in_checking - emergency_fund)
+    available_funds = float(monthly_income - keep_in_checking)
     extra_funds = available_funds - total_min_payments
     
     if extra_funds > 0:
@@ -539,7 +539,7 @@ def compare_strategies(monthly_income, keep_in_checking, debts, emergency_fund=0
         }
     
     for strategy in strategies:
-        timeline = calculate_payoff_timeline(monthly_income, keep_in_checking, debts, strategy, emergency_fund)
+        timeline = calculate_payoff_timeline(monthly_income, keep_in_checking, debts, strategy)
         
         if timeline and 'error' not in timeline[0]:
             total_interest = sum(month['interest_paid'] for month in timeline)

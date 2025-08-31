@@ -288,18 +288,25 @@
                 );
             }
 
-            if (results.error) {
-                return (
-                    <Card>
-                        <div className="text-center py-8">
-                            <div className="text-2xl mb-4">⚠️</div>
-                            <h2 className="text-xl font-semibold mb-2">Oops!</h2>
-                            <p className="text-gray-600 mb-4">{results.error}</p>
-                            <Button onClick={onRestart}>Start Over</Button>
-                        </div>
-                    </Card>
-                );
-            }
+                         if (results.error) {
+                 return (
+                     <Card>
+                         <div className="text-center py-8">
+                             <div className="text-2xl mb-4">⚠️</div>
+                             <h2 className="text-xl font-semibold mb-2">Oops!</h2>
+                             <p className="text-gray-600 mb-4">{results.error}</p>
+                             <div className="flex space-x-3 justify-center">
+                                 <Button onClick={onBack} className="bg-gray-500 hover:bg-gray-600">
+                                     ← Back to Debts
+                                 </Button>
+                                 <Button onClick={onRestart} className="bg-green-600 hover:bg-green-700">
+                                     Start Over
+                                 </Button>
+                             </div>
+                         </div>
+                     </Card>
+                 );
+             }
 
             const totalDebt = debts.reduce((sum, debt) => sum + parseFloat(debt.current_balance || 0), 0);
             const totalMinPayments = debts.reduce((sum, debt) => sum + parseFloat(debt.minimum_payment || 0), 0);
@@ -509,7 +516,7 @@
                                                 Pay minimums on all debts, then put ALL extra money toward the highest interest debt first.
                                             </p>
                                             
-                                            {results.strategy_comparison?.avalanche && (
+                                                                                         {results.strategy_comparison && results.strategy_comparison.avalanche && (
                                                 <div className="space-y-3 mb-4">
                                                     <div className="flex justify-between items-center">
                                                         <span className="text-white opacity-70">Total Interest:</span>
@@ -525,9 +532,9 @@
                                                     </div>
                                                     <div className="flex justify-between items-center">
                                                         <span className="text-white opacity-70">Years Saved:</span>
-                                                        <span className="font-bold text-green-400">
-                                                            {Math.floor((results.strategy_comparison.equal_payment?.months_to_payoff || 0 - results.strategy_comparison.avalanche.months_to_payoff) / 12)} years
-                                                        </span>
+                                                                                                                 <span className="font-bold text-green-400">
+                                                             {Math.floor(((results.strategy_comparison && results.strategy_comparison.equal_payment && results.strategy_comparison.equal_payment.months_to_payoff || 0) - results.strategy_comparison.avalanche.months_to_payoff) / 12)} years
+                                                         </span>
                                                     </div>
                                                 </div>
                                             )}
@@ -556,7 +563,7 @@
                                                 Pay minimums on all debts, then put ALL extra money toward the smallest balance debt first.
                                             </p>
                                             
-                                            {results.strategy_comparison?.snowball && (
+                                                                                         {results.strategy_comparison && results.strategy_comparison.snowball && (
                                                 <div className="space-y-3 mb-4">
                                                     <div className="flex justify-between items-center">
                                                         <span className="text-white opacity-70">Total Interest:</span>
@@ -572,9 +579,9 @@
                                                     </div>
                                                     <div className="flex justify-between items-center">
                                                         <span className="text-white opacity-70">vs Equal Payment:</span>
-                                                        <span className="font-bold text-green-400">
-                                                            ${(results.strategy_comparison.equal_payment?.total_interest || 0 - results.strategy_comparison.snowball.total_interest).toLocaleString()} saved
-                                                        </span>
+                                                                                                                 <span className="font-bold text-green-400">
+                                                             ${((results.strategy_comparison && results.strategy_comparison.equal_payment && results.strategy_comparison.equal_payment.total_interest || 0) - results.strategy_comparison.snowball.total_interest).toLocaleString()} saved
+                                                         </span>
                                                     </div>
                                                 </div>
                                             )}
@@ -602,7 +609,7 @@
                                             <p className="text-white opacity-80 text-sm mb-3">
                                                 Combine priority levels with interest rates for personalized strategy.
                                             </p>
-                                            {results.strategy_comparison?.hybrid && (
+                                                                                         {results.strategy_comparison && results.strategy_comparison.hybrid && (
                                                 <div className="text-center">
                                                     <div className="text-xl font-bold text-white">${results.strategy_comparison.hybrid.interest_saved.toLocaleString()}</div>
                                                     <div className="text-white opacity-70 text-xs">Money Saved</div>
@@ -619,7 +626,7 @@
                                             <p className="text-white opacity-80 text-sm mb-3">
                                                 Pay debts due soonest first to avoid late fees.
                                             </p>
-                                            {results.strategy_comparison?.due_date && (
+                                                                                         {results.strategy_comparison && results.strategy_comparison.due_date && (
                                                 <div className="text-center">
                                                     <div className="text-xl font-bold text-white">${results.strategy_comparison.due_date.interest_saved.toLocaleString()}</div>
                                                     <div className="text-white opacity-70 text-xs">Money Saved</div>
@@ -636,7 +643,7 @@
                                             <p className="text-white opacity-80 text-sm mb-3">
                                                 Prioritize debts with early payoff bonuses.
                                             </p>
-                                            {results.strategy_comparison?.bonus_optimized && (
+                                                                                         {results.strategy_comparison && results.strategy_comparison.bonus_optimized && (
                                                 <div className="text-center">
                                                     <div className="text-xl font-bold text-white">${results.strategy_comparison.bonus_optimized.interest_saved.toLocaleString()}</div>
                                                     <div className="text-white opacity-70 text-xs">Money Saved</div>
@@ -722,9 +729,9 @@
                                         <div className="bg-green-500 bg-opacity-20 rounded-lg p-4 border border-green-400">
                                             <h6 className="font-bold text-white mb-2">💡 Pro Tip:</h6>
                                             <p className="text-white opacity-90 text-sm">
-                                                Show your friend this comparison! They could save ${Math.max(...Object.values(results.strategy_comparison || {}).map(s => s.interest_saved || 0)).toLocaleString()} 
-                                                and pay off debt {Math.floor((Math.max(...Object.values(results.strategy_comparison || {}).map(s => s.months_to_payoff || 0)) - 
-                                                Math.min(...Object.values(results.strategy_comparison || {}).map(s => s.months_to_payoff || 0))) / 12)} years faster!
+                                                                                                 Show your friend this comparison! They could save ${results.strategy_comparison && results.strategy_comparison.avalanche ? results.strategy_comparison.avalanche.interest_saved.toLocaleString() : '0'} 
+                                                 and pay off debt {results.strategy_comparison && results.strategy_comparison.equal_payment && results.strategy_comparison.avalanche ? 
+                                                 Math.floor((results.strategy_comparison.equal_payment.months_to_payoff - results.strategy_comparison.avalanche.months_to_payoff) / 12) : 0} years faster!
                                             </p>
                                         </div>
                                     </div>
