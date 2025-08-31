@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Debt Payoff Planner - Pay Off Debt Faster!</title>
+    <title>Comprehensive Financial Planner - Real-World Money Management</title>
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css')}}">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -12,7 +12,7 @@
     <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
 </head>
 
-<body class="bg-gradient-to-br from-red-50 to-orange-50 min-h-screen">
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
     <div id="root"></div>
 
     <script type="text/babel">
@@ -29,7 +29,7 @@
             <button 
                 onClick={onClick} 
                 disabled={disabled}
-                className={`w-full py-3 px-4 rounded-lg font-medium text-white bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors ${className}`}
+                className={`w-full py-3 px-4 rounded-lg font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors ${className}`}
             >
                 {children}
             </button>
@@ -43,7 +43,7 @@
                     value={value}
                     onChange={onChange}
                     placeholder={placeholder}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent ${className}`}
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${className}`}
                 />
             </div>
         );
@@ -54,7 +54,7 @@
                 <select
                     value={value}
                     onChange={onChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                     {options.map(option => (
                         <option key={option.value} value={option.value}>
@@ -66,28 +66,140 @@
         );
 
         // Step Components
-        const Step1Income = ({ monthlyIncome, setMonthlyIncome, onNext }) => (
+        const Step1Income = ({ financialData, setFinancialData, onNext }) => (
             <Card>
-                <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Step 1: How much money do you have to pay off debt?</h2>
-                <div className="max-w-md mx-auto space-y-6">
-                    <Input
-                        label="Your Monthly Income (after taxes)"
-                        type="number"
-                        value={monthlyIncome}
-                        onChange={(e) => setMonthlyIncome(e.target.value)}
-                        placeholder="e.g., 5000"
-                    />
-                    <div className="text-sm text-gray-600 text-center">
-                        💡 This is how much you can put toward debt each month
+                <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Step 1: Your Income & Savings</h2>
+                <div className="max-w-4xl mx-auto space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <Input
+                            label="Monthly Income (after taxes)"
+                            type="number"
+                            value={financialData.monthly_income || ""}
+                            onChange={(e) => setFinancialData({...financialData, monthly_income: e.target.value})}
+                            placeholder="e.g., 5000"
+                        />
+                        <Input
+                            label="Current Savings"
+                            type="number"
+                            value={financialData.current_savings || ""}
+                            onChange={(e) => setFinancialData({...financialData, current_savings: e.target.value})}
+                            placeholder="e.g., 10000"
+                        />
                     </div>
-                    <Button onClick={onNext} disabled={!monthlyIncome}>
-                        Next: Add My Debts
+                    
+                    <div className="bg-blue-50 p-4 rounded-lg">
+                        <h3 className="font-semibold mb-3">💡 Income Changes (Optional)</h3>
+                        <p className="text-sm text-gray-600 mb-4">Add expected changes to your income over the next 12 months</p>
+                        <IncomeChangesList 
+                            incomeChanges={financialData.income_changes || []}
+                            setIncomeChanges={(changes) => setFinancialData({...financialData, income_changes: changes})}
+                        />
+                    </div>
+
+                    <div className="bg-green-50 p-4 rounded-lg">
+                        <h3 className="font-semibold mb-3">🎯 Emergency Fund Target</h3>
+                        <p className="text-sm text-gray-600 mb-3">How much do you want in your emergency fund?</p>
+                        <Input
+                            label="Emergency Fund Target (months of income)"
+                            type="number"
+                            value={financialData.emergency_fund_months || "6"}
+                            onChange={(e) => setFinancialData({...financialData, emergency_fund_months: e.target.value})}
+                            placeholder="6"
+                        />
+                    </div>
+
+                    <Button onClick={onNext} disabled={!financialData.monthly_income}>
+                        Next: Add Your Debts
                     </Button>
                 </div>
             </Card>
         );
 
-        const Step2Debts = ({ debts, setDebts, onNext, onBack }) => {
+        const IncomeChangesList = ({ incomeChanges, setIncomeChanges }) => {
+            const [newChange, setNewChange] = useState({
+                name: "",
+                type: "percentage",
+                amount: "",
+                start_month: ""
+            });
+
+            const addChange = () => {
+                if (newChange.name && newChange.amount && newChange.start_month) {
+                    setIncomeChanges([...incomeChanges, { ...newChange, id: Date.now() }]);
+                    setNewChange({ name: "", type: "percentage", amount: "", start_month: "" });
+                }
+            };
+
+            const removeChange = (id) => {
+                setIncomeChanges(incomeChanges.filter(change => change.id !== id));
+            };
+
+            return (
+                <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                        <Input
+                            label="Description"
+                            value={newChange.name}
+                            onChange={(e) => setNewChange({...newChange, name: e.target.value})}
+                            placeholder="e.g., New client"
+                        />
+                        <Select
+                            label="Type"
+                            value={newChange.type}
+                            onChange={(e) => setNewChange({...newChange, type: e.target.value})}
+                            options={[
+                                { value: "percentage", label: "Percentage Increase" },
+                                { value: "fixed", label: "Fixed Amount" },
+                                { value: "one_time", label: "One-time Bonus" }
+                            ]}
+                        />
+                        <Input
+                            label={newChange.type === "percentage" ? "Percentage" : "Amount ($)"}
+                            type="number"
+                            value={newChange.amount}
+                            onChange={(e) => setNewChange({...newChange, amount: e.target.value})}
+                            placeholder={newChange.type === "percentage" ? "20" : "1000"}
+                        />
+                        <Input
+                            label="Start Month"
+                            type="number"
+                            value={newChange.start_month}
+                            onChange={(e) => setNewChange({...newChange, start_month: e.target.value})}
+                            placeholder="3"
+                        />
+                    </div>
+                    <Button onClick={addChange} className="bg-green-600 hover:bg-green-700" disabled={!newChange.name || !newChange.amount || !newChange.start_month}>
+                        Add Income Change
+                    </Button>
+
+                    {incomeChanges.length > 0 && (
+                        <div className="space-y-2">
+                            <h4 className="font-medium">Planned Changes:</h4>
+                            {incomeChanges.map(change => (
+                                <div key={change.id} className="flex justify-between items-center bg-white p-3 rounded border">
+                                    <div>
+                                        <span className="font-medium">{change.name}</span>
+                                                                                <span className="text-sm text-gray-500 ml-2">
+                                            {change.type === "percentage" ? change.amount + "%" :
+                                             change.type === "fixed" ? "+$" + change.amount :
+                                             "$" + change.amount + " bonus"} starting month {change.start_month}
+                                        </span>
+                                    </div>
+                                    <button 
+                                        onClick={() => removeChange(change.id)}
+                                        className="text-red-500 hover:text-red-700"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const Step2Debts = ({ financialData, setFinancialData, onNext, onBack }) => {
             const [newDebt, setNewDebt] = useState({ 
                 name: "", 
                 current_balance: "", 
@@ -98,7 +210,10 @@
 
             const addDebt = () => {
                 if (newDebt.name && newDebt.current_balance && newDebt.interest_rate && newDebt.minimum_payment) {
-                    setDebts([...debts, { ...newDebt, id: Date.now() }]);
+                    setFinancialData({
+                        ...financialData, 
+                        debts: [...(financialData.debts || []), { ...newDebt, id: Date.now() }]
+                    });
                     setNewDebt({ 
                         name: "", 
                         current_balance: "", 
@@ -110,11 +225,14 @@
             };
 
             const removeDebt = (id) => {
-                setDebts(debts.filter(debt => debt.id !== id));
+                setFinancialData({
+                    ...financialData,
+                    debts: (financialData.debts || []).filter(debt => debt.id !== id)
+                });
             };
 
-            const totalDebt = debts.reduce((sum, debt) => sum + parseFloat(debt.current_balance || 0), 0);
-            const totalMonthlyInterest = debts.reduce((sum, debt) => {
+            const totalDebt = (financialData.debts || []).reduce((sum, debt) => sum + parseFloat(debt.current_balance || 0), 0);
+            const totalMonthlyInterest = (financialData.debts || []).reduce((sum, debt) => {
                 const balance = parseFloat(debt.current_balance || 0);
                 const rate = parseFloat(debt.interest_rate || 0);
                 return sum + (balance * rate / 100 / 12);
@@ -122,11 +240,10 @@
 
             return (
                 <Card>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Step 2: What debts do you have?</h2>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Step 2: Your Debts</h2>
                     
                     <div className="max-w-4xl mx-auto space-y-6">
-                        {/* Add New Debt */}
-                        <div className="bg-gray-50 p-4 rounded-lg">
+                        <div className="bg-red-50 p-4 rounded-lg">
                             <h3 className="font-semibold mb-3">Add a new debt:</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
                                 <Input
@@ -167,17 +284,16 @@
                                     ]}
                                 />
                             </div>
-                            <Button onClick={addDebt} className="mt-3" disabled={!newDebt.name || !newDebt.current_balance || !newDebt.interest_rate || !newDebt.minimum_payment}>
+                            <Button onClick={addDebt} className="mt-3 bg-red-600 hover:bg-red-700" disabled={!newDebt.name || !newDebt.current_balance || !newDebt.interest_rate || !newDebt.minimum_payment}>
                                 Add This Debt
                             </Button>
                         </div>
 
-                        {/* Current Debts */}
-                        {debts.length > 0 && (
+                        {(financialData.debts || []).length > 0 && (
                             <div>
                                 <h3 className="font-semibold mb-3">Your current debts:</h3>
                                 <div className="space-y-2">
-                                    {debts.map(debt => (
+                                    {(financialData.debts || []).map(debt => (
                                         <div key={debt.id} className="flex justify-between items-center bg-white p-3 rounded border">
                                             <div className="flex items-center space-x-3">
                                                 <div>
@@ -219,7 +335,7 @@
                                         </div>
                                         <div>
                                             <div className="text-lg font-bold text-blue-600">
-                                                ${debts.reduce((sum, debt) => sum + parseFloat(debt.minimum_payment || 0), 0).toLocaleString()}
+                                                ${(financialData.debts || []).reduce((sum, debt) => sum + parseFloat(debt.minimum_payment || 0), 0).toLocaleString()}
                                             </div>
                                             <div className="text-sm text-gray-600">Total Min Payments</div>
                                         </div>
@@ -232,8 +348,8 @@
                             <Button onClick={onBack} className="bg-gray-500 hover:bg-gray-600">
                                 ← Back
                             </Button>
-                            <Button onClick={onNext} disabled={debts.length === 0}>
-                                Next: See My Payoff Plan
+                            <Button onClick={onNext}>
+                                Next: Add Your Expenses
                             </Button>
                         </div>
                     </div>
@@ -241,22 +357,276 @@
             );
         };
 
-        const Step3Results = ({ monthlyIncome, debts, onBack, onRestart }) => {
+        const Step3Expenses = ({ financialData, setFinancialData, onNext, onBack }) => {
+            const [expenseCategories, setExpenseCategories] = useState({});
+            const [newExpense, setNewExpense] = useState({ 
+                name: "", 
+                category: "housing",
+                amount: "",
+                flexible: true
+            });
+
+            useEffect(() => {
+                fetch('/expense-categories')
+                    .then(res => res.json())
+                    .then(data => setExpenseCategories(data))
+                    .catch(err => console.error('Error loading categories:', err));
+            }, []);
+
+            const addExpense = () => {
+                if (newExpense.name && newExpense.amount) {
+                    setFinancialData({
+                        ...financialData, 
+                        expenses: [...(financialData.expenses || []), { ...newExpense, id: Date.now() }]
+                    });
+                    setNewExpense({ 
+                        name: "", 
+                        category: "housing",
+                        amount: "",
+                        flexible: true
+                    });
+                }
+            };
+
+            const removeExpense = (id) => {
+                setFinancialData({
+                    ...financialData,
+                    expenses: (financialData.expenses || []).filter(expense => expense.id !== id)
+                });
+            };
+
+            const totalExpenses = (financialData.expenses || []).reduce((sum, expense) => sum + parseFloat(expense.amount || 0), 0);
+
+            return (
+                <Card>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Step 3: Your Monthly Expenses</h2>
+                    
+                    <div className="max-w-4xl mx-auto space-y-6">
+                        <div className="bg-green-50 p-4 rounded-lg">
+                            <h3 className="font-semibold mb-3">Add a new expense:</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                                <Input
+                                    label="Expense Name"
+                                    value={newExpense.name}
+                                    onChange={(e) => setNewExpense({...newExpense, name: e.target.value})}
+                                    placeholder="e.g., Rent"
+                                />
+                                <Select
+                                    label="Category"
+                                    value={newExpense.category}
+                                    onChange={(e) => setNewExpense({...newExpense, category: e.target.value})}
+                                    options={Object.entries(expenseCategories).map(([key, cat]) => ({
+                                        value: key,
+                                        label: cat.icon + " " + cat.name
+                                    }))}
+                                />
+                                <Input
+                                    label="Monthly Amount ($)"
+                                    type="number"
+                                    value={newExpense.amount}
+                                    onChange={(e) => setNewExpense({...newExpense, amount: e.target.value})}
+                                    placeholder="1200"
+                                />
+                                <div className="flex items-center space-x-2">
+                                    <input
+                                        type="checkbox"
+                                        id="flexible"
+                                        checked={newExpense.flexible}
+                                        onChange={(e) => setNewExpense({...newExpense, flexible: e.target.checked})}
+                                        className="rounded"
+                                    />
+                                    <label htmlFor="flexible" className="text-sm text-gray-700">Flexible Expense</label>
+                                </div>
+                            </div>
+                            <Button onClick={addExpense} className="mt-3 bg-green-600 hover:bg-green-700" disabled={!newExpense.name || !newExpense.amount}>
+                                Add This Expense
+                            </Button>
+                        </div>
+
+                        {(financialData.expenses || []).length > 0 && (
+                            <div>
+                                <h3 className="font-semibold mb-3">Your monthly expenses:</h3>
+                                <div className="space-y-2">
+                                    {(financialData.expenses || []).map(expense => (
+                                        <div key={expense.id} className="flex justify-between items-center bg-white p-3 rounded border">
+                                            <div className="flex items-center space-x-3">
+                                                <div>
+                                                    <span className="font-medium">{expense.name}</span>
+                                                    <span className="text-sm text-gray-500 ml-2">
+                                                        {expenseCategories[expense.category]?.name || expense.category}
+                                                    </span>
+                                                    {expense.flexible && (
+                                                        <span className="ml-2 px-2 py-1 rounded text-xs bg-blue-100 text-blue-800">
+                                                            Flexible
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center space-x-2">
+                                                <span className="font-semibold">${expense.amount}</span>
+                                                <button 
+                                                    onClick={() => removeExpense(expense.id)}
+                                                    className="text-red-500 hover:text-red-700"
+                                                >
+                                                    ✕
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="mt-3 p-3 bg-green-50 rounded">
+                                    <div className="text-center">
+                                        <div className="text-2xl font-bold text-green-600">${totalExpenses.toLocaleString()}</div>
+                                        <div className="text-sm text-gray-600">Total Monthly Expenses</div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="flex space-x-3">
+                            <Button onClick={onBack} className="bg-gray-500 hover:bg-gray-600">
+                                ← Back
+                            </Button>
+                            <Button onClick={onNext}>
+                                Next: Add Your Goals
+                            </Button>
+                        </div>
+                    </div>
+                </Card>
+            );
+        };
+
+        const Step4Goals = ({ financialData, setFinancialData, onNext, onBack }) => {
+            const [newGoal, setNewGoal] = useState({ 
+                name: "", 
+                type: "savings",
+                target_amount: "",
+                target_month: ""
+            });
+
+            const addGoal = () => {
+                if (newGoal.name && newGoal.target_amount && newGoal.target_month) {
+                    setFinancialData({
+                        ...financialData, 
+                        goals: [...(financialData.goals || []), { ...newGoal, id: Date.now() }]
+                    });
+                    setNewGoal({ 
+                        name: "", 
+                        type: "savings",
+                        target_amount: "",
+                        target_month: ""
+                    });
+                }
+            };
+
+            const removeGoal = (id) => {
+                setFinancialData({
+                    ...financialData,
+                    goals: (financialData.goals || []).filter(goal => goal.id !== id)
+                });
+            };
+
+            return (
+                <Card>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Step 4: Your Financial Goals</h2>
+                    
+                    <div className="max-w-4xl mx-auto space-y-6">
+                        <div className="bg-purple-50 p-4 rounded-lg">
+                            <h3 className="font-semibold mb-3">Add a new goal:</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                                <Input
+                                    label="Goal Name"
+                                    value={newGoal.name}
+                                    onChange={(e) => setNewGoal({...newGoal, name: e.target.value})}
+                                    placeholder="e.g., Buy a car"
+                                />
+                                <Select
+                                    label="Goal Type"
+                                    value={newGoal.type}
+                                    onChange={(e) => setNewGoal({...newGoal, type: e.target.value})}
+                                    options={[
+                                        { value: "savings", label: "💰 Savings Goal" },
+                                        { value: "debt_payoff", label: "💳 Debt Payoff" },
+                                        { value: "purchase", label: "🛒 Major Purchase" }
+                                    ]}
+                                />
+                                <Input
+                                    label="Target Amount ($)"
+                                    type="number"
+                                    value={newGoal.target_amount}
+                                    onChange={(e) => setNewGoal({...newGoal, target_amount: e.target.value})}
+                                    placeholder="25000"
+                                />
+                                <Input
+                                    label="Target Month"
+                                    type="number"
+                                    value={newGoal.target_month}
+                                    onChange={(e) => setNewGoal({...newGoal, target_month: e.target.value})}
+                                    placeholder="6"
+                                />
+                            </div>
+                            <Button onClick={addGoal} className="mt-3 bg-purple-600 hover:bg-purple-700" disabled={!newGoal.name || !newGoal.target_amount || !newGoal.target_month}>
+                                Add This Goal
+                            </Button>
+                        </div>
+
+                        {(financialData.goals || []).length > 0 && (
+                            <div>
+                                <h3 className="font-semibold mb-3">Your financial goals:</h3>
+                                <div className="space-y-2">
+                                    {(financialData.goals || []).map(goal => (
+                                        <div key={goal.id} className="flex justify-between items-center bg-white p-3 rounded border">
+                                            <div className="flex items-center space-x-3">
+                                                <div>
+                                                    <span className="font-medium">{goal.name}</span>
+                                                    <span className="text-sm text-gray-500 ml-2">
+                                                        {goal.type === 'savings' ? '💰 Savings' : 
+                                                         goal.type === 'debt_payoff' ? '💳 Debt Payoff' : '🛒 Purchase'}
+                                                    </span>
+                                                </div>
+                                                <div className="text-sm text-gray-500">
+                                                    ${goal.target_amount} by month {goal.target_month}
+                                                </div>
+                                            </div>
+                                            <button 
+                                                onClick={() => removeGoal(goal.id)}
+                                                className="text-red-500 hover:text-red-700"
+                                            >
+                                                ✕
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="flex space-x-3">
+                            <Button onClick={onBack} className="bg-gray-500 hover:bg-gray-600">
+                                ← Back
+                            </Button>
+                            <Button onClick={onNext}>
+                                Generate My Financial Plan
+                            </Button>
+                        </div>
+                    </div>
+                </Card>
+            );
+        };
+
+        const Step5Results = ({ financialData, onBack, onRestart }) => {
             const [results, setResults] = useState(null);
             const [loading, setLoading] = useState(true);
-            const [activeTab, setActiveTab] = useState('plan');
+            const [activeTab, setActiveTab] = useState('summary');
 
             useEffect(() => {
                 const calculatePlan = async () => {
                     try {
-                        const response = await fetch("/allocate", {
+                        const response = await fetch("/calculate-plan", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({
-                                monthly_income: parseFloat(monthlyIncome),
-                                keep_in_checking: 0,
-                                debts: debts,
-                                strategy: "avalanche"
+                                ...financialData,
+                                emergency_fund_target: (financialData.monthly_income || 0) * (financialData.emergency_fund_months || 6)
                             })
                         });
                         
@@ -274,170 +644,191 @@
                 };
 
                 calculatePlan();
-            }, [monthlyIncome, debts]);
+            }, [financialData]);
 
             if (loading) {
                 return (
                     <Card>
                         <div className="text-center py-8">
                             <div className="text-2xl mb-4">🤔</div>
-                            <h2 className="text-xl font-semibold mb-2">Creating your debt payoff plan...</h2>
+                            <h2 className="text-xl font-semibold mb-2">Creating your comprehensive financial plan...</h2>
                             <p className="text-gray-600">This will just take a moment!</p>
                         </div>
                     </Card>
                 );
             }
 
-                         if (results.error) {
-                 return (
-                     <Card>
-                         <div className="text-center py-8">
-                             <div className="text-2xl mb-4">⚠️</div>
-                             <h2 className="text-xl font-semibold mb-2">Oops!</h2>
-                             <p className="text-gray-600 mb-4">{results.error}</p>
-                             <div className="flex space-x-3 justify-center">
-                                 <Button onClick={onBack} className="bg-gray-500 hover:bg-gray-600">
-                                     ← Back to Debts
-                                 </Button>
-                                 <Button onClick={onRestart} className="bg-green-600 hover:bg-green-700">
-                                     Start Over
-                                 </Button>
-                             </div>
-                         </div>
-                     </Card>
-                 );
-             }
-
-            const totalDebt = debts.reduce((sum, debt) => sum + parseFloat(debt.current_balance || 0), 0);
-            const totalMinPayments = debts.reduce((sum, debt) => sum + parseFloat(debt.minimum_payment || 0), 0);
-            const extraPayment = parseFloat(monthlyIncome) - totalMinPayments;
+            if (results.error) {
+                return (
+                    <Card>
+                        <div className="text-center py-8">
+                            <div className="text-2xl mb-4">⚠️</div>
+                            <h2 className="text-xl font-semibold mb-2">Oops!</h2>
+                            <p className="text-gray-600 mb-4">{results.error}</p>
+                            <div className="flex space-x-3 justify-center">
+                                <Button onClick={onBack} className="bg-gray-500 hover:bg-gray-600">
+                                    ← Back to Goals
+                                </Button>
+                                <Button onClick={onRestart} className="bg-green-600 hover:bg-green-700">
+                                    Start Over
+                                </Button>
+                            </div>
+                        </div>
+                    </Card>
+                );
+            }
 
             return (
                 <div className="space-y-6">
                     <Card>
-                        <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Your Smart Debt Payoff Plan</h2>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Your Comprehensive Financial Plan</h2>
                         
-                        {/* Tab Navigation */}
-                        <div className="flex space-x-1 mb-6 bg-gray-100 p-1 rounded-lg">
-                            <button
-                                onClick={() => setActiveTab('plan')}
-                                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                                    activeTab === 'plan' ? 'bg-white text-red-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
-                                }`}
-                            >
-                                📋 Payoff Plan
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('timeline')}
-                                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                                    activeTab === 'timeline' ? 'bg-white text-red-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
-                                }`}
-                            >
-                                📅 Timeline
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('compare')}
-                                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                                    activeTab === 'compare' ? 'bg-white text-red-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
-                                }`}
-                            >
-                                ⚖️ Compare Strategies
-                            </button>
+                        {/* Financial Health Score */}
+                        <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6 rounded-lg mb-6">
+                            <div className="text-center">
+                                <div className="text-4xl font-bold mb-2">{results.summary.financial_health_score}/100</div>
+                                <div className="text-lg">Financial Health Score</div>
+                                <div className="text-sm opacity-90 mt-2">
+                                    {results.summary.financial_health_score >= 80 ? "Excellent! You're in great financial shape!" :
+                                     results.summary.financial_health_score >= 60 ? "Good! You're on the right track!" :
+                                     results.summary.financial_health_score >= 40 ? "Fair. There's room for improvement." :
+                                     "Needs attention. Let's work on improving your financial health."}
+                                </div>
+                            </div>
                         </div>
 
                         {/* Summary Cards */}
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                             <div className="text-center p-4 bg-green-50 rounded-lg">
-                                <div className="text-2xl font-bold text-green-600">${monthlyIncome.toLocaleString()}</div>
+                                <div className="text-2xl font-bold text-green-600">${results.summary.monthly_income.toLocaleString()}</div>
                                 <div className="text-sm text-gray-600">Monthly Income</div>
                             </div>
                             <div className="text-center p-4 bg-red-50 rounded-lg">
-                                <div className="text-2xl font-bold text-red-600">${totalDebt.toLocaleString()}</div>
+                                <div className="text-2xl font-bold text-red-600">${results.summary.total_debt.toLocaleString()}</div>
                                 <div className="text-sm text-gray-600">Total Debt</div>
                             </div>
                             <div className="text-center p-4 bg-blue-50 rounded-lg">
-                                <div className="text-2xl font-bold text-blue-600">${totalMinPayments.toLocaleString()}</div>
-                                <div className="text-sm text-gray-600">Min Payments</div>
+                                <div className="text-2xl font-bold text-blue-600">${results.summary.total_current_expenses.toLocaleString()}</div>
+                                <div className="text-sm text-gray-600">Monthly Expenses</div>
                             </div>
                             <div className="text-center p-4 bg-purple-50 rounded-lg">
-                                <div className="text-2xl font-bold text-purple-600">${extraPayment.toLocaleString()}</div>
-                                <div className="text-sm text-gray-600">Extra for Debt</div>
+                                <div className="text-2xl font-bold text-purple-600">${results.summary.available_funds.toLocaleString()}</div>
+                                <div className="text-sm text-gray-600">Available Funds</div>
                             </div>
                         </div>
 
+                        {/* Tab Navigation */}
+                        <div className="flex space-x-1 mb-6 bg-gray-100 p-1 rounded-lg">
+                            <button
+                                onClick={() => setActiveTab('summary')}
+                                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                                    activeTab === 'summary' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                                }`}
+                            >
+                                📊 Summary
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('projection')}
+                                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                                    activeTab === 'projection' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                                }`}
+                            >
+                                📈 12-Month Projection
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('strategies')}
+                                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                                    activeTab === 'strategies' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                                }`}
+                            >
+                                ⚖️ Debt Strategies
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('recommendations')}
+                                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                                    activeTab === 'recommendations' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                                }`}
+                            >
+                                💡 Recommendations
+                            </button>
+                        </div>
+
                         {/* Tab Content */}
-                        {activeTab === 'plan' && results.allocation && (
+                        {activeTab === 'summary' && (
                             <div className="space-y-6">
-                                <div className="bg-blue-50 p-4 rounded-lg">
-                                    <h3 className="font-semibold mb-3">🎯 Your Payoff Strategy: Avalanche Method</h3>
-                                    <p className="text-sm text-gray-700">
-                                        Pay minimums on all debts, then put extra money toward the debt with the highest interest rate. 
-                                        This saves you the most money in interest!
-                                    </p>
-                                </div>
-
-                                <div>
-                                    <h3 className="font-semibold mb-3">📋 Monthly Payment Plan:</h3>
-                                    <div className="space-y-3">
-                                        {results.allocation.map((debt, index) => (
-                                            <div key={index} className="flex justify-between items-center bg-white p-3 rounded border">
-                                                <div>
-                                                    <span className="font-medium">{debt.name}</span>
-                                                    <span className="text-sm text-gray-500 ml-2">
-                                                        (${debt.current_balance} @ {debt.interest_rate}%)
-                                                    </span>
-                                                </div>
-                                                <div className="text-right">
-                                                    <div className="font-semibold">${debt.allocated}</div>
-                                                    <div className="text-sm text-gray-500">
-                                                        Min: ${debt.minimum_payment} + Extra: ${(debt.allocated - debt.minimum_payment).toFixed(2)}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {results.total_interest_saved && (
-                                    <div className="bg-green-50 p-4 rounded-lg">
-                                        <h3 className="font-semibold mb-2">💰 Money You'll Save:</h3>
-                                        <div className="text-2xl font-bold text-green-600">
-                                            ${results.total_interest_saved.toLocaleString()} in interest!
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="bg-blue-50 p-4 rounded-lg">
+                                        <h3 className="font-semibold mb-3">💰 Emergency Fund Status</h3>
+                                        <div className="text-2xl font-bold text-blue-600 mb-2">
+                                            ${results.summary.current_savings.toLocaleString()}
                                         </div>
-                                        <p className="text-sm text-gray-600 mt-1">
-                                            Compared to making only minimum payments
-                                        </p>
+                                        <div className="text-sm text-gray-600">
+                                            Target: ${results.summary.emergency_fund_target.toLocaleString()}
+                                        </div>
+                                        <div className="mt-2">
+                                            <div className="w-full bg-gray-200 rounded-full h-2">
+                                                <div 
+                                                    className="bg-blue-600 h-2 rounded-full" 
+                                                    style={{"width": Math.min(100, (results.summary.current_savings / results.summary.emergency_fund_target) * 100) + "%"}}
+                                                ></div>
+                                            </div>
+                                        </div>
                                     </div>
-                                )}
+                                    <div className="bg-green-50 p-4 rounded-lg">
+                                        <h3 className="font-semibold mb-3">📊 Key Ratios</h3>
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between">
+                                                <span>Debt-to-Income:</span>
+                                                <span className="font-semibold">{((results.summary.total_debt / results.summary.monthly_income) * 100).toFixed(1)}%</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span>Expense Ratio:</span>
+                                                <span className="font-semibold">{((results.summary.total_current_expenses / results.summary.monthly_income) * 100).toFixed(1)}%</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span>Savings Rate:</span>
+                                                <span className="font-semibold">{((results.summary.available_funds / results.summary.monthly_income) * 100).toFixed(1)}%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         )}
 
-                        {activeTab === 'timeline' && (
+                        {activeTab === 'projection' && (
                             <div className="space-y-6">
                                 <div className="bg-yellow-50 p-4 rounded-lg">
-                                    <h3 className="font-semibold mb-3">📅 When Will You Be Debt Free?</h3>
+                                    <h3 className="font-semibold mb-3">📈 12-Month Financial Projection</h3>
                                     <p className="text-sm text-gray-700">
-                                        This shows how long it will take to pay off all your debts with this plan.
+                                        This shows how your finances will evolve over the next year based on your current plan.
                                     </p>
                                 </div>
 
                                 <div className="space-y-4">
-                                    {results.timeline && results.timeline.map((month, index) => (
+                                    {results.projection.map((month, index) => (
                                         <div key={index} className="bg-white p-4 rounded border">
                                             <div className="flex justify-between items-center mb-2">
                                                 <h4 className="font-semibold">Month {month.month}</h4>
                                                 <span className="text-sm text-gray-500">
-                                                    ${month.total_remaining.toLocaleString()} remaining
+                                                    Income: ${month.income.toLocaleString()}
                                                 </span>
                                             </div>
-                                            <div className="text-sm text-gray-600">
-                                                {month.debts_paid_off.length > 0 && (
-                                                    <div className="mb-2">
-                                                        <span className="text-green-600 font-medium">✓ Paid off:</span> {month.debts_paid_off.join(', ')}
-                                                    </div>
-                                                )}
-                                                <div className="text-sm">
-                                                    Interest paid this month: ${month.interest_paid.toFixed(2)}
+                                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+                                                <div>
+                                                    <span className="text-gray-600">Expenses:</span>
+                                                    <div className="font-semibold">${month.expenses.toLocaleString()}</div>
+                                                </div>
+                                                <div>
+                                                    <span className="text-gray-600">Savings:</span>
+                                                    <div className="font-semibold text-green-600">${month.savings.toLocaleString()}</div>
+                                                </div>
+                                                <div>
+                                                    <span className="text-gray-600">Balance:</span>
+                                                    <div className="font-semibold">${month.current_balance.toLocaleString()}</div>
+                                                </div>
+                                                <div>
+                                                    <span className="text-gray-600">Debt Remaining:</span>
+                                                    <div className="font-semibold text-red-600">${month.total_debt_remaining.toLocaleString()}</div>
                                                 </div>
                                             </div>
                                         </div>
@@ -446,302 +837,75 @@
                             </div>
                         )}
 
-                        {activeTab === 'compare' && (
-                            <div className="space-y-8">
-                                <div className="glass-card p-6">
-                                    <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
-                                        <span className="text-2xl mr-3">⚖️</span>
-                                        Why Paying All Debts Equally is a HUGE Mistake!
-                                    </h3>
-                                    <p className="text-white opacity-80">
-                                        Your friend is throwing money away! See how smart strategies can save thousands and pay off debt years faster.
+                        {activeTab === 'strategies' && (
+                            <div className="space-y-6">
+                                <div className="bg-blue-50 p-4 rounded-lg">
+                                    <h3 className="font-semibold mb-3">⚖️ Debt Payoff Strategy Comparison</h3>
+                                    <p className="text-sm text-gray-700">
+                                        Compare different approaches to paying off your debt.
                                     </p>
                                 </div>
 
-                                {/* Equal Payment Strategy (The Bad One) */}
-                                <div className="glass-card p-6 bg-gradient-to-r from-red-500 to-pink-500 bg-opacity-20 border-2 border-red-400">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <h4 className="text-xl font-bold text-white flex items-center">
-                                            <span className="text-2xl mr-3">❌</span>
-                                            Equal Payment Strategy (BAD!)
-                                        </h4>
-                                        <span className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-bold">AVOID THIS!</span>
-                                    </div>
-                                    <p className="text-white opacity-90 mb-4">
-                                        <strong>What your friend is doing:</strong> Paying the same extra amount on all debts regardless of interest rates.
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    {Object.entries(results.debt_strategies).map(([strategy, data]) => (
+                                        <div key={strategy} className="bg-white p-4 rounded border">
+                                            <h4 className="font-semibold mb-2 capitalize">
+                                                {strategy === 'avalanche' ? '🔥 Avalanche' : 
+                                                 strategy === 'snowball' ? '❄️ Snowball' : '⚖️ Equal Payment'}
+                                            </h4>
+                                            <div className="space-y-2 text-sm">
+                                                <div className="flex justify-between">
+                                                    <span>Months to Payoff:</span>
+                                                    <span className="font-semibold">{data.months_to_payoff}</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span>Total Interest:</span>
+                                                    <span className="font-semibold">${data.total_interest.toLocaleString()}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'recommendations' && (
+                            <div className="space-y-6">
+                                <div className="bg-green-50 p-4 rounded-lg">
+                                    <h3 className="font-semibold mb-3">💡 Personalized Recommendations</h3>
+                                    <p className="text-sm text-gray-700">
+                                        Based on your financial situation, here are our recommendations to improve your financial health.
                                     </p>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                                        <div className="bg-white bg-opacity-10 rounded-lg p-3">
-                                            <div className="text-2xl font-bold text-red-400">${(results.strategy_comparison && results.strategy_comparison.equal_payment && results.strategy_comparison.equal_payment.total_interest || 0).toLocaleString()}</div>
-                                            <div className="text-white opacity-70 text-sm">Total Interest (Wasted Money!)</div>
-                                        </div>
-                                        <div className="bg-white bg-opacity-10 rounded-lg p-3">
-                                            <div className="text-2xl font-bold text-red-400">{results.strategy_comparison && results.strategy_comparison.equal_payment && results.strategy_comparison.equal_payment.months_to_payoff || 0} months</div>
-                                            <div className="text-white opacity-70 text-sm">Years in Debt</div>
-                                        </div>
-                                        <div className="bg-white bg-opacity-10 rounded-lg p-3">
-                                            <div className="text-2xl font-bold text-red-400">$0</div>
-                                            <div className="text-white opacity-70 text-sm">Money Saved</div>
-                                        </div>
-                                    </div>
-                                    <div className="bg-red-500 bg-opacity-20 rounded-lg p-4 border border-red-400">
-                                        <h5 className="font-bold text-white mb-2">🚨 Why This is Terrible:</h5>
-                                        <ul className="text-white opacity-90 text-sm space-y-1">
-                                            <li>• High-interest debts keep growing faster than you can pay them</li>
-                                            <li>• You're paying more interest than necessary</li>
-                                            <li>• Takes YEARS longer to become debt-free</li>
-                                            <li>• Wastes thousands of dollars in extra interest</li>
-                                        </ul>
-                                    </div>
                                 </div>
 
-                                {/* Best Strategies */}
-                                <div className="glass-card p-6">
-                                    <h4 className="text-xl font-semibold text-white mb-6 flex items-center">
-                                        <span className="text-2xl mr-3">🏆</span>
-                                        Smart Strategies (Choose These Instead!)
-                                    </h4>
-                                    
-                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                        {/* Avalanche Strategy */}
-                                        <div className="debt-item bg-gradient-to-r from-green-500 to-emerald-500 bg-opacity-10 border-2 border-green-400">
-                                            <div className="flex items-center justify-between mb-4">
-                                                <h5 className="text-lg font-bold text-white flex items-center">
-                                                    <span className="text-xl mr-2">🔥</span>
-                                                    Avalanche Method
-                                                </h5>
-                                                <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-bold">BEST FOR SAVINGS</span>
-                                            </div>
-                                            <p className="text-white opacity-80 mb-4 text-sm">
-                                                Pay minimums on all debts, then put ALL extra money toward the highest interest debt first.
-                                            </p>
-                                            
-                                                                                         {results.strategy_comparison && results.strategy_comparison.avalanche && (
-                                                <div className="space-y-3 mb-4">
-                                                    <div className="flex justify-between items-center">
-                                                        <span className="text-white opacity-70">Total Interest:</span>
-                                                        <span className="font-bold text-white">${results.strategy_comparison.avalanche.total_interest.toLocaleString()}</span>
-                                                    </div>
-                                                    <div className="flex justify-between items-center">
-                                                        <span className="text-white opacity-70">Payoff Time:</span>
-                                                        <span className="font-bold text-white">{results.strategy_comparison.avalanche.months_to_payoff} months</span>
-                                                    </div>
-                                                    <div className="flex justify-between items-center">
-                                                        <span className="text-white opacity-70">Money Saved:</span>
-                                                        <span className="font-bold text-green-400">${results.strategy_comparison.avalanche.interest_saved.toLocaleString()}</span>
-                                                    </div>
-                                                    <div className="flex justify-between items-center">
-                                                        <span className="text-white opacity-70">Years Saved:</span>
-                                                                                                                 <span className="font-bold text-green-400">
-                                                             {Math.floor(((results.strategy_comparison && results.strategy_comparison.equal_payment && results.strategy_comparison.equal_payment.months_to_payoff || 0) - results.strategy_comparison.avalanche.months_to_payoff) / 12)} years
-                                                         </span>
-                                                    </div>
+                                <div className="space-y-4">
+                                    {results.recommendations.map((rec, index) => (
+                                        <div key={index} className={`p-4 rounded-lg border ${
+                                            rec.priority === 'high' ? 'bg-red-50 border-red-200' :
+                                            rec.priority === 'medium' ? 'bg-yellow-50 border-yellow-200' :
+                                            'bg-blue-50 border-blue-200'
+                                        }`}>
+                                            <div className="flex items-start space-x-3">
+                                                <div className={`w-2 h-2 rounded-full mt-2 ${
+                                                    rec.priority === 'high' ? 'bg-red-500' :
+                                                    rec.priority === 'medium' ? 'bg-yellow-500' :
+                                                    'bg-blue-500'
+                                                }`}></div>
+                                                <div>
+                                                    <h4 className="font-semibold">{rec.title}</h4>
+                                                    <p className="text-sm text-gray-600 mt-1">{rec.description}</p>
+                                                    <p className="text-sm font-medium text-blue-600 mt-2">Action: {rec.action}</p>
                                                 </div>
-                                            )}
-                                            
-                                            <div className="bg-green-500 bg-opacity-20 rounded-lg p-3 border border-green-400">
-                                                <h6 className="font-bold text-white mb-2">✅ Why This is Amazing:</h6>
-                                                <ul className="text-white opacity-90 text-xs space-y-1">
-                                                    <li>• Saves the MOST money in interest</li>
-                                                    <li>• Mathematically optimal approach</li>
-                                                    <li>• Gets you debt-free fastest</li>
-                                                    <li>• Perfect for high-interest credit cards</li>
-                                                </ul>
                                             </div>
                                         </div>
-
-                                        {/* Snowball Strategy */}
-                                        <div className="debt-item bg-gradient-to-r from-blue-500 to-purple-500 bg-opacity-10 border-2 border-blue-400">
-                                            <div className="flex items-center justify-between mb-4">
-                                                <h5 className="text-lg font-bold text-white flex items-center">
-                                                    <span className="text-xl mr-2">❄️</span>
-                                                    Snowball Method
-                                                </h5>
-                                                <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-bold">BEST FOR MOTIVATION</span>
-                                            </div>
-                                            <p className="text-white opacity-80 mb-4 text-sm">
-                                                Pay minimums on all debts, then put ALL extra money toward the smallest balance debt first.
-                                            </p>
-                                            
-                                                                                         {results.strategy_comparison && results.strategy_comparison.snowball && (
-                                                <div className="space-y-3 mb-4">
-                                                    <div className="flex justify-between items-center">
-                                                        <span className="text-white opacity-70">Total Interest:</span>
-                                                        <span className="font-bold text-white">${results.strategy_comparison.snowball.total_interest.toLocaleString()}</span>
-                                                    </div>
-                                                    <div className="flex justify-between items-center">
-                                                        <span className="text-white opacity-70">Payoff Time:</span>
-                                                        <span className="font-bold text-white">{results.strategy_comparison.snowball.months_to_payoff} months</span>
-                                                    </div>
-                                                    <div className="flex justify-between items-center">
-                                                        <span className="text-white opacity-70">Money Saved:</span>
-                                                        <span className="font-bold text-green-400">${results.strategy_comparison.snowball.interest_saved.toLocaleString()}</span>
-                                                    </div>
-                                                    <div className="flex justify-between items-center">
-                                                        <span className="text-white opacity-70">vs Equal Payment:</span>
-                                                                                                                 <span className="font-bold text-green-400">
-                                                             ${((results.strategy_comparison && results.strategy_comparison.equal_payment && results.strategy_comparison.equal_payment.total_interest || 0) - results.strategy_comparison.snowball.total_interest).toLocaleString()} saved
-                                                         </span>
-                                                    </div>
-                                                </div>
-                                            )}
-                                            
-                                            <div className="bg-blue-500 bg-opacity-20 rounded-lg p-3 border border-blue-400">
-                                                <h6 className="font-bold text-white mb-2">✅ Why This Works:</h6>
-                                                <ul className="text-white opacity-90 text-xs space-y-1">
-                                                    <li>• Quick wins keep you motivated</li>
-                                                    <li>• Reduces number of payments faster</li>
-                                                    <li>• Great for people who need encouragement</li>
-                                                    <li>• Still saves money vs equal payments</li>
-                                                </ul>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Additional Strategies */}
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-                                        {/* Hybrid Strategy */}
-                                        <div className="debt-item bg-gradient-to-r from-purple-500 to-pink-500 bg-opacity-10 border border-purple-400">
-                                            <h5 className="text-lg font-bold text-white mb-3 flex items-center">
-                                                <span className="text-xl mr-2">🎯</span>
-                                                Hybrid Method
-                                            </h5>
-                                            <p className="text-white opacity-80 text-sm mb-3">
-                                                Combine priority levels with interest rates for personalized strategy.
-                                            </p>
-                                                                                         {results.strategy_comparison && results.strategy_comparison.hybrid && (
-                                                <div className="text-center">
-                                                    <div className="text-xl font-bold text-white">${results.strategy_comparison.hybrid.interest_saved.toLocaleString()}</div>
-                                                    <div className="text-white opacity-70 text-xs">Money Saved</div>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* Due Date Strategy */}
-                                        <div className="debt-item bg-gradient-to-r from-orange-500 to-red-500 bg-opacity-10 border border-orange-400">
-                                            <h5 className="text-lg font-bold text-white mb-3 flex items-center">
-                                                <span className="text-xl mr-2">📅</span>
-                                                Due Date Method
-                                            </h5>
-                                            <p className="text-white opacity-80 text-sm mb-3">
-                                                Pay debts due soonest first to avoid late fees.
-                                            </p>
-                                                                                         {results.strategy_comparison && results.strategy_comparison.due_date && (
-                                                <div className="text-center">
-                                                    <div className="text-xl font-bold text-white">${results.strategy_comparison.due_date.interest_saved.toLocaleString()}</div>
-                                                    <div className="text-white opacity-70 text-xs">Money Saved</div>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* Bonus Optimized */}
-                                        <div className="debt-item bg-gradient-to-r from-yellow-500 to-orange-500 bg-opacity-10 border border-yellow-400">
-                                            <h5 className="text-lg font-bold text-white mb-3 flex items-center">
-                                                <span className="text-xl mr-2">💰</span>
-                                                Bonus Optimized
-                                            </h5>
-                                            <p className="text-white opacity-80 text-sm mb-3">
-                                                Prioritize debts with early payoff bonuses.
-                                            </p>
-                                                                                         {results.strategy_comparison && results.strategy_comparison.bonus_optimized && (
-                                                <div className="text-center">
-                                                    <div className="text-xl font-bold text-white">${results.strategy_comparison.bonus_optimized.interest_saved.toLocaleString()}</div>
-                                                    <div className="text-white opacity-70 text-xs">Money Saved</div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {/* Strategy Comparison Table */}
-                                    <div className="mt-8">
-                                        <h5 className="text-lg font-bold text-white mb-4 flex items-center">
-                                            <span className="text-xl mr-2">📊</span>
-                                            Strategy Comparison Summary
-                                        </h5>
-                                        <div className="overflow-x-auto">
-                                            <table className="w-full text-white">
-                                                <thead>
-                                                    <tr className="border-b border-white border-opacity-20">
-                                                        <th className="text-left py-3">Strategy</th>
-                                                        <th className="text-center py-3">Total Interest</th>
-                                                        <th className="text-center py-3">Payoff Time</th>
-                                                        <th className="text-center py-3">Money Saved</th>
-                                                        <th className="text-center py-3">Rating</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {results.strategy_comparison && Object.entries(results.strategy_comparison).map(([strategy, data]) => (
-                                                        <tr key={strategy} className="border-b border-white border-opacity-10">
-                                                            <td className="py-3">
-                                                                <div className="flex items-center">
-                                                                    <span className="text-lg mr-2">
-                                                                        {strategy === 'avalanche' ? '🔥' :
-                                                                         strategy === 'snowball' ? '❄️' :
-                                                                         strategy === 'hybrid' ? '🎯' :
-                                                                         strategy === 'due_date' ? '📅' :
-                                                                         strategy === 'bonus_optimized' ? '💰' : '❌'}
-                                                                    </span>
-                                                                    <span className="font-semibold capitalize">
-                                                                        {strategy === 'avalanche' ? 'Avalanche' :
-                                                                         strategy === 'snowball' ? 'Snowball' :
-                                                                         strategy === 'hybrid' ? 'Hybrid' :
-                                                                         strategy === 'due_date' ? 'Due Date' :
-                                                                         strategy === 'bonus_optimized' ? 'Bonus Optimized' : 'Equal Payment'}
-                                                                    </span>
-                                                                </div>
-                                                            </td>
-                                                            <td className="text-center py-3">${data.total_interest.toLocaleString()}</td>
-                                                            <td className="text-center py-3">{data.months_to_payoff} months</td>
-                                                            <td className="text-center py-3">
-                                                                <span className="text-green-400 font-bold">${data.interest_saved.toLocaleString()}</span>
-                                                            </td>
-                                                            <td className="text-center py-3">
-                                                                {strategy === 'avalanche' ? '⭐⭐⭐⭐⭐' :
-                                                                 strategy === 'snowball' ? '⭐⭐⭐⭐' :
-                                                                 strategy === 'hybrid' ? '⭐⭐⭐⭐' :
-                                                                 strategy === 'due_date' ? '⭐⭐⭐' :
-                                                                 strategy === 'bonus_optimized' ? '⭐⭐⭐' : '⭐'}
-                                                            </td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-
-                                    {/* Recommendation */}
-                                    <div className="mt-8 glass-card p-6 bg-gradient-to-r from-green-500 to-emerald-500 bg-opacity-20 border-2 border-green-400">
-                                        <h5 className="text-xl font-bold text-white mb-4 flex items-center">
-                                            <span className="text-2xl mr-3">🏆</span>
-                                            Our Recommendation
-                                        </h5>
-                                        <div className="text-white opacity-90 mb-4">
-                                            <p className="mb-3">
-                                                <strong>🔥 Use the Avalanche Method</strong> - It will save you the most money and get you debt-free fastest!
-                                            </p>
-                                            <p className="mb-3">
-                                                <strong>❄️ Use Snowball Method</strong> - Only if you need the psychological boost of quick wins to stay motivated.
-                                            </p>
-                                            <p>
-                                                <strong>❌ NEVER use Equal Payment</strong> - Your friend is literally throwing money away!
-                                            </p>
-                                        </div>
-                                        <div className="bg-green-500 bg-opacity-20 rounded-lg p-4 border border-green-400">
-                                            <h6 className="font-bold text-white mb-2">💡 Pro Tip:</h6>
-                                            <p className="text-white opacity-90 text-sm">
-                                                                                                 Show your friend this comparison! They could save ${results.strategy_comparison && results.strategy_comparison.avalanche ? results.strategy_comparison.avalanche.interest_saved.toLocaleString() : '0'} 
-                                                 and pay off debt {results.strategy_comparison && results.strategy_comparison.equal_payment && results.strategy_comparison.avalanche ? 
-                                                 Math.floor((results.strategy_comparison.equal_payment.months_to_payoff - results.strategy_comparison.avalanche.months_to_payoff) / 12) : 0} years faster!
-                                            </p>
-                                        </div>
-                                    </div>
+                                    ))}
                                 </div>
                             </div>
                         )}
 
                         <div className="flex space-x-3">
                             <Button onClick={onBack} className="bg-gray-500 hover:bg-gray-600">
-                                ← Back to Debts
+                                ← Back to Goals
                             </Button>
                             <Button onClick={onRestart} className="bg-green-600 hover:bg-green-700">
                                 Start Over
@@ -755,15 +919,29 @@
         // Main App
         function App() {
             const [step, setStep] = useState(1);
-            const [monthlyIncome, setMonthlyIncome] = useState("");
-            const [debts, setDebts] = useState([]);
+            const [financialData, setFinancialData] = useState({
+                monthly_income: "",
+                current_savings: "",
+                emergency_fund_months: "6",
+                debts: [],
+                expenses: [],
+                income_changes: [],
+                goals: []
+            });
 
             const nextStep = () => setStep(step + 1);
             const prevStep = () => setStep(step - 1);
             const restart = () => {
                 setStep(1);
-                setMonthlyIncome("");
-                setDebts([]);
+                setFinancialData({
+                    monthly_income: "",
+                    current_savings: "",
+                    emergency_fund_months: "6",
+                    debts: [],
+                    expenses: [],
+                    income_changes: [],
+                    goals: []
+                });
             };
 
             return (
@@ -771,39 +949,43 @@
                     {/* Header */}
                     <div className="text-center mb-8">
                         <h1 className="text-4xl font-bold text-gray-900 mb-4">
-                            💳 Smart Debt Payoff Planner
+                            💰 Comprehensive Financial Planner
                         </h1>
-                        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                            Pay off your debts faster and save thousands in interest with smart strategies
+                        <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+                            Plan for real-world scenarios: variable income, savings goals, major purchases, and flexible expenses. 
+                            Perfect for self-employed professionals and anyone with changing financial circumstances.
                         </p>
                     </div>
 
                     {/* Progress Bar */}
-                    <div className="max-w-2xl mx-auto mb-8">
+                    <div className="max-w-4xl mx-auto mb-8">
                         <div className="flex items-center justify-between">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                                step >= 1 ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-500'
-                            }`}>1</div>
-                            <div className={`flex-1 h-1 ${step >= 2 ? 'bg-red-600' : 'bg-gray-200'}`}></div>
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                                step >= 2 ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-500'
-                            }`}>2</div>
-                            <div className={`flex-1 h-1 ${step >= 3 ? 'bg-red-600' : 'bg-gray-200'}`}></div>
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                                step >= 3 ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-500'
-                            }`}>3</div>
+                            {[1, 2, 3, 4, 5].map((stepNum) => (
+                                <React.Fragment key={stepNum}>
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                                        step >= stepNum ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'
+                                    }`}>{stepNum}</div>
+                                    {stepNum < 5 && (
+                                        <div className={`flex-1 h-1 ${step > stepNum ? 'bg-blue-600' : 'bg-gray-200'}`}></div>
+                                    )}
+                                </React.Fragment>
+                            ))}
                         </div>
                         <div className="flex justify-between mt-2 text-sm text-gray-600">
                             <span>Income</span>
                             <span>Debts</span>
+                            <span>Expenses</span>
+                            <span>Goals</span>
                             <span>Plan</span>
                         </div>
                     </div>
 
                     {/* Step Content */}
-                    {step === 1 && <Step1Income monthlyIncome={monthlyIncome} setMonthlyIncome={setMonthlyIncome} onNext={nextStep} />}
-                    {step === 2 && <Step2Debts debts={debts} setDebts={setDebts} onNext={nextStep} onBack={prevStep} />}
-                    {step === 3 && <Step3Results monthlyIncome={monthlyIncome} debts={debts} onBack={prevStep} onRestart={restart} />}
+                    {step === 1 && <Step1Income financialData={financialData} setFinancialData={setFinancialData} onNext={nextStep} />}
+                    {step === 2 && <Step2Debts financialData={financialData} setFinancialData={setFinancialData} onNext={nextStep} onBack={prevStep} />}
+                    {step === 3 && <Step3Expenses financialData={financialData} setFinancialData={setFinancialData} onNext={nextStep} onBack={prevStep} />}
+                    {step === 4 && <Step4Goals financialData={financialData} setFinancialData={setFinancialData} onNext={nextStep} onBack={prevStep} />}
+                    {step === 5 && <Step5Results financialData={financialData} onBack={prevStep} onRestart={restart} />}
                 </div>
             );
         }
